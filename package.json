@@ -1,0 +1,12 @@
+{
+  "name": "ds2022-visual-lectures",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DS 2022 visual lecture slides and student interactive diagrams",
+  "scripts": {
+    "check": "node scripts/validate_slides.mjs",
+    "test": "node scripts/validate_slides.mjs && node --test interactives/lecture-04/*.test.mjs",
+    "serve": "python3 -m http.server 8000"
+  },
+  "engines": { "node": ">=20" }
+}
