@@ -117,10 +117,17 @@
 
   scene('Sources of input',['Arguments and environment','An interactive prompt','Files and embedded data'],(d,s)=>{
     title(d,'Sources of input');
-    if(s===0){code(d,'args',['$0   $1   $2','export DATA_DIR="$HOME/data"'],110,235,36,75);}
-    if(s===1){code(d,'read',['read -r -p "Name: " NAME'],110,250,36);text(d,'attended',640,400,'A person must answer',34,P.orange);}
+    if(s===0){
+      ['$0','$1','$2'].forEach((value,i)=>{
+        code(d,'arg-'+i,[value],200+i*400,210,40);
+        text(d,'arg-label-'+i,225+i*400,275,['Script name','First argument','Second argument'][i],30,P.blue);
+      });
+      code(d,'env-input',['export DATA_DIR="$HOME/data"'],110,380,36);
+      d.text('env-label',110,440,'Exported environment variable',30,P.green,'start');
+    }
+    if(s===1){d.text('read-shell',110,190,'Bash',30,P.blue,'start');code(d,'read',['read -r -p "Name: " NAME'],110,270,36);text(d,'attended',640,400,'The shell pauses and waits for user input.',34,P.orange);}
     if(s===2){flow(d,['data.csv','script','result.csv'],1,250);text(d,'embedded',640,438,'Small defaults can live in the script',30,P.muted);}
-  },'Have students choose an input channel for a filename, a machine-specific data directory, a one-time human answer, and a thousand records. Positional arguments suit explicit per-run input. Exported environment variables suit inherited configuration. read -r accepts backslashes literally and is useful for interactive input. Files hold larger data; a small embedded constant may be suitable for a default or test. A script launched unattended should not wait for a terminal prompt. Shell variables use NAME=value and unset NAME; the shell set builtin is not the ordinary assignment syntax.', '7, 16',{minutes:2});
+  },'Have students choose an input channel for a filename, a machine-specific data directory, a one-time human answer, and a thousand records. $0 is the script invocation name; $1 and $2 are the first and second positional arguments. These parameters are separate from file descriptors 0, 1, and 2 for standard input, output, and error. Exported environment variables supply inherited configuration to child processes. read -r accepts backslashes literally and is useful for interactive input. The displayed read -p prompt syntax is Bash-specific. In Zsh, use read -r "NAME?Name: "; its -p option reads from a coprocess instead. In this interactive example, the shell pauses and waits for user input. Files hold larger data; a small embedded constant may be suitable for a default or test. A script launched unattended should not wait for a terminal prompt. Shell variables use NAME=value and unset NAME; the shell set builtin is not the ordinary assignment syntax.', '7, 16',{minutes:2,sources:['https://zsh.sourceforge.io/Doc/Release/Shell-Builtin-Commands.html']});
 
   scene('CSV and TSV',['Comma-separated columns','Tab-separated columns','The same table'],(d,s)=>{
     title(d,'CSV and TSV');
@@ -136,8 +143,9 @@
   scene('Standard streams',['Input and output','A separate error stream'],(d,s)=>{
     title(d,'Standard streams');
     box(d,'in',70,265,250,85,'stdin  0',true,P.blue,33);box(d,'program',475,265,300,85,'Program',true,P.green,35);box(d,'out',960,220,250,85,'stdout  1',true,P.green,33);
+    text(d,'in-caption',195,225,'Standard input',29,P.blue);text(d,'out-caption',1085,180,'Standard output',29,P.green);
     d.arrow('input',335,308,460,308,P.blue,4);d.arrow('output',790,290,945,260,P.green,4);
-    if(s){box(d,'err',960,390,250,85,'stderr  2',true,P.orange,33);d.arrow('error',790,330,945,432,P.orange,4);}
+    if(s){box(d,'err',960,390,250,85,'stderr  2',true,P.orange,33);text(d,'err-caption',1085,350,'Standard error',29,P.orange);d.arrow('error',790,330,945,432,P.orange,4);}
   },'Use this diagram to make the source’s output choices concrete. Standard input, standard output, and standard error are file descriptors 0, 1, and 2. By default a terminal often displays both output streams, which can conceal the distinction. Ordinary | carries stdout to the next process; stderr continues to its current destination unless redirected. Ask where a warning should go if stdout is being consumed as CSV. Expected: keep data and diagnostics separate. Open the streams activity to route each stream independently.', '4, 20',{activity:'streams',minutes:3,sources:[BASH+'Redirections.html']});
 
   scene('Output redirection',['Replace','Append','Errors and discarded output'],(d,s)=>{
