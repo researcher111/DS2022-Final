@@ -155,10 +155,27 @@
     if(s===2)code(d,'routes',['python3 clean.py > clean.csv','python3 clean.py 2> errors.log','python3 clean.py > /dev/null'],110,220,33,77);
   },'Before revealing >, ask what happens if the destination already exists. The shell opens and normally truncates the file before running the command. >> appends. 2> redirects stderr. /dev/null discards data sent to it. The final build shows three separate alternative runs, not one command to execute repeatedly. Printing to a terminal, saving a result, discarding output, and logging execution have different purposes. For a single run that saves both streams separately: python3 clean.py > clean.csv 2> errors.log. Redirection order matters when duplicating descriptors with 2>&1.', '20',{activity:'streams',minutes:2,sources:[BASH+'Redirections.html']});
 
-  scene('Bash conditionals',['The test','True branch','False branch'],(d,s)=>{
+  scene('Bash conditionals',['The test','True branch','False branch','What the brackets mean','Python equivalent','Python parentheses'],(d,s)=>{
     title(d,'Bash conditionals');
-    code(d,'if',['if [[ -f "data.txt" ]]; then','    echo "File exists"','else','    echo "File missing"','fi'],110,200,34,57,s===0?0:s===1?1:3);
-  },'Ask what each possible state of data.txt does. [[ -f ... ]] succeeds for an existing regular file. It does not mean that a path of any type exists, nor does it promise that a later read will succeed. if uses command exit status: zero selects then. else handles the other outcome and fi closes the block. [[ ... ]] is Bash syntax; students should use a Bash shebang rather than assume every sh supports it. Have them predict the branch before running the control-flow activity.', '21',{activity:'control',minutes:3});
+    if(s<3){
+      code(d,'if',['if [[ -f "data.txt" ]]; then','    echo "File exists"','else','    echo "No regular file"','fi'],110,200,34,57,s===0?0:s===1?1:3);
+      text(d,'meaning',640,498,['[[ ... ]] evaluates a condition','True → exit status 0 → then','False → exit status 1 → else'][s],30,s===2?P.orange:P.green);
+    }else if(s===3){
+      code(d,'test',['[[ -f "data.txt" ]]'],110,225,42);
+      text(d,'predicate',640,330,'-f checks for an existing regular file',33);
+      box(d,'true-status',150,420,420,78,'True → status 0',true,P.green,32);
+      box(d,'false-status',710,420,420,78,'False → status 1',true,P.orange,32);
+    }else if(s===4){
+      text(d,'language',1090,145,'Python',27,P.blue);
+      code(d,'python-if',['from pathlib import Path','if Path("data.txt").is_file():','    print("File exists")','else:','    print("No regular file")'],110,195,32,58,1);
+      text(d,'python-result',640,498,'is_file() returns True or False',31,P.blue);
+    }else{
+      text(d,'language',1090,145,'Python',27,P.blue);
+      code(d,'plain-if',['if score >= 80:','    print("Passed")'],110,205,34,55);
+      code(d,'grouped-if',['if (score >= 80):','    print("Passed")'],110,360,34,55);
+      text(d,'grouping',640,498,'Same condition: parentheses here are optional grouping.',30,P.blue);
+    }
+  },'Ask what each possible state of data.txt does. [[ ... ]] is a Bash conditional construct that evaluates a test, not the equivalent of Python parentheses. [[ -f ... ]] succeeds for an existing regular file, following symbolic links. It does not mean that a path of any type exists, nor does it promise that a later read will succeed. A valid test returns status 0 for true and 1 for false. if uses command exit status: zero selects then. else handles the other outcome and fi closes the block. The false message says No regular file because the path could be a directory or another non-regular file, not only missing. Python expresses the corresponding check with Path("data.txt").is_file(), which returns True or False. Parentheses after Path and is_file perform calls; parentheses around score >= 80 merely group that expression and are optional here. Bash [[ ... ]] supplies the test syntax itself. Keep spaces after [[ and before ]]. Students should use a Bash shebang rather than assume every sh supports it. Have them predict the branch before running the control-flow activity.', '21',{activity:'control',minutes:4,sources:[BASH+'Conditional-Constructs.html',BASH+'Bash-Conditional-Expressions.html',PY+'library/pathlib.html#pathlib.Path.is_file',PY+'reference/compound_stmts.html#the-if-statement']});
 
   scene('Bash tests',['Files','Numbers','Strings'],(d,s)=>{
     title(d,'Bash tests');
@@ -166,11 +183,25 @@
     d.table('tests',100,190,[490,590],rows,{rowHeight:76,fontSize:29});
   },'Use the table as an index of choices, then write an example in the open space: [[ "$count" -eq 5 ]] or [[ "$name" == "alice" ]]. Numeric and string comparisons express different tests. Within [[ ... ]], an unquoted right-hand side of == may be a pattern; quote a literal string. File predicates follow symbolic links in the usual cases, so -e can be false for a broken symlink. -s means an existing file with a size greater than zero. Ask students to choose a predicate for each case instead of memorizing the whole table at once.', '21–22',{minutes:3,sources:[BASH+'Bash-Conditional-Expressions.html']});
 
-  scene('Bash array loops',['An array','The iteration','Preserved spaces'],(d,s)=>{
+  scene('Bash array loops',['Create the array','Iteration 1: assign Alice','Iteration 1: echo Alice','Iteration 1: end of body','Iteration 2: assign Bob Smith','Iteration 2: echo Bob Smith','Iteration 2: end of body','Iteration 3: assign Carol','Iteration 3: echo Carol','Iteration 3: end of body','No items left: finished'],(d,s)=>{
     title(d,'Bash array loops');
-    code(d,'loop',['names=("Alice" "Bob Smith" "Carol")','for name in "${names[@]}"; do','    echo "Name: $name"','done'],90,190,32,59,s===0?0:s===1?1:2);
-    text(d,'item',640,480,['Alice','Bob Smith','Carol'][s],36,P.green);
-  },'Ask how many loop iterations occur. Expected: three, even though Bob Smith contains a space. Quoted "${names[@]}" expands each array element as a separate argument. The loop variable receives one item per iteration. do begins the body and done ends it. The source also shows numbers=(1 2 3 4 5), which uses the same loop shape. Bash array entries are shell values; writing digits in the array does not create Python-style numeric objects. Have students predict how removing the quotes changes an element that contains spaces.', '23',{minutes:3});
+    const names=['Alice','Bob Smith','Carol'];
+    const iteration=s===0?-1:Math.min(2,Math.floor((s-1)/3));
+    const phase=s===0?-1:(s-1)%3;
+    const finished=s===10;
+    const printed=s===0?0:finished?3:iteration+(phase>=1?1:0);
+    const active=s===0?0:finished?-1:phase+1;
+    d.text('progress',1180,88,s===0?'Three items':finished?'Finished: 3 iterations':`Iteration ${iteration+1} / 3`,27,P.green,'end');
+    code(d,'loop',['names=("Alice" "Bob Smith" "Carol")','for name in "${names[@]}"; do','    echo "Name: $name"','done'],90,170,32,49,active);
+    if(!finished&&phase===2){
+      d.path('repeat','M 68 317 L 42 317 L 42 219','none',P.green,3);
+      d.arrow('repeat-head',42,219,68,219,P.green,3);
+    }
+    text(d,'variable-caption',290,379,'Loop variable',27,P.muted);
+    box(d,'variable',80,413,420,92,iteration<0?'—':`name = "${names[iteration]}"`,s>0,P.green,29);
+    d.text('output-caption',740,379,'Standard output (stdout)',27,P.muted,'start');
+    for(let i=0;i<printed;i++)d.add('output-'+i,'text',{x:740,y:424+i*36,fill:i===printed-1?P.green:P.ink,'font-size':29,'font-family':'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace','text-anchor':'start','dominant-baseline':'middle'},'Name: '+names[i]);
+  },'Step or play through the complete trace. The array is initialized once. Each iteration highlights for as name receives its next item, echo as one new line is appended to standard output, and done as the body ends and control returns to the loop. After Carol, there are no items left and the loop finishes with exactly three output lines. Going backward reconstructs the earlier variable and output state. The loop variable retains Carol after completion; Bash does not create a separate scope for a for loop. Ask how many loop iterations occur before starting. Expected: three, even though Bob Smith contains a space. Quoted "${names[@]}" expands each array element as a separate argument. The loop variable receives one item per iteration. do begins the body and done ends it; done is syntax, not an extra command. The source also shows numbers=(1 2 3 4 5), which uses the same loop shape. Bash array entries are shell values; writing digits in the array does not create Python-style numeric objects. Have students predict how removing the quotes changes an element that contains spaces.', '23',{minutes:4,sources:[BASH+'Looping-Constructs.html',BASH+'Arrays.html']});
 
   scene('Loops over files',['Matching filenames','No matching files'],(d,s)=>{
     title(d,'Loops over files');
