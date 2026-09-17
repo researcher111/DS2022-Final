@@ -1,5 +1,5 @@
-import {SAMPLE_DATA,pipeline,commandLookup,inheritVariable,STREAM_MODES,routeStreams,controlTrace,ENV_PROJECTS,createEnvironmentState,protobufCompatibility,environmentState,installEnvironment} from './models.mjs?v=20260917-venv-intro';
-import {createVirtualEnvironmentDemo,renderVirtualEnvironment} from './venv-lab.mjs?v=20260917-venv-intro';
+import {SAMPLE_DATA,pipeline,commandLookup,inheritVariable,STREAM_MODES,routeStreams,controlTrace,ENV_PROJECTS,createEnvironmentState,protobufCompatibility,environmentState,installEnvironment} from './models.mjs?v=20260917-venv-import';
+import {createVirtualEnvironmentDemo,renderVirtualEnvironment} from './venv-lab.mjs?v=20260917-venv-import';
 
 const $ = selector => document.querySelector(selector);
 const esc = value => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
