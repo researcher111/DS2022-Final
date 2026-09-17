@@ -86,87 +86,20 @@ export function controlTrace({mode = 'branch', exists = true, names = ['Ada','Bo
   return steps;
 }
 
-// The classroom model shows the shared protobuf dependency, not the complete
-// dependency trees that uv resolves and records in a real project's uv.lock.
-export const ENV_PROJECTS = Object.freeze({
-  a:Object.freeze({name:'Project 1',directory:'project-1',package:'dbt-core',version:'1.7.14',spec:'dbt-core==1.7.14',protobufRange:'>=4.0.0,<5',protobufVersion:'4.25.8'}),
-  b:Object.freeze({name:'Project 2',directory:'project-2',package:'google-cloud-pubsub',version:'2.40.0',spec:'google-cloud-pubsub==2.40.0',protobufRange:'>=6.33.5,<8.0.0',protobufVersion:'6.33.5'})
-});
-
-export function createEnvironmentState() {
-  return {isolated:false,installed:{shared:null,a:null,b:null},locks:{shared:null,a:null,b:null}};
+// Fictional dependency graph: coursekit 1.0 -> helper 1.x; 2.0 -> helper 2.x.
+export function resolvePackages(version, newer = false) {
+  return {coursekit:version, helper:version === '1.0' ? (newer ? '1.5' : '1.4') : (newer ? '2.2' : '2.1')};
 }
-
-function releaseParts(version) {
-  const value = String(version).trim();
-  if (!/^\d+(?:\.\d+){0,2}$/.test(value)) return null;
-  const parts = value.split('.').map(Number);
-  if (!parts.every(Number.isSafeInteger)) return null;
-  while (parts.length < 3) parts.push(0);
-  return parts;
-}
-
-function compareRelease(left, right) {
-  for (let index = 0; index < 3; index += 1) {
-    if (left[index] !== right[index]) return left[index] < right[index] ? -1 : 1;
-  }
-  return 0;
-}
-
-export function protobufCompatibility(version) {
-  const parts = releaseParts(version);
-  if (!parts) return {a:false,b:false};
-  return {
-    a:compareRelease(parts,[4,0,0]) >= 0 && compareRelease(parts,[5,0,0]) < 0,
-    b:compareRelease(parts,[6,33,5]) >= 0 && compareRelease(parts,[8,0,0]) < 0
-  };
-}
-
-export function resolvePackages(project) {
-  const requirement = ENV_PROJECTS[project];
-  if (!requirement) throw new RangeError(`Unknown project: ${project}`);
-  return {[requirement.package]:requirement.version,protobuf:requirement.protobufVersion};
-}
-
-export function environmentState({isolated,installed}) {
-  return Object.keys(ENV_PROJECTS).map(project => {
-    const requirement = ENV_PROJECTS[project];
+export function environmentState({isolated, required, installed}) {
+  return ['a','b'].map(project => {
     const actual = isolated ? installed[project] : installed.shared;
-    const missing = !actual || !Object.hasOwn(actual,requirement.package);
-    const ok = !missing && actual[requirement.package] === requirement.version && protobufCompatibility(actual.protobuf)[project];
-    return {project,required:requirement.spec,actual,ok,missing};
+    return {project, required:required[project], actual, ok:actual?.coursekit === required[project], missing:!actual};
   });
 }
-
-function lockMatches(packages,project) {
-  const requirement = ENV_PROJECTS[project];
-  const other = ENV_PROJECTS[project === 'a' ? 'b' : 'a'];
-  return Boolean(packages && packages[requirement.package] === requirement.version && !Object.hasOwn(packages,other.package) && protobufCompatibility(packages.protobuf)[project]);
-}
-
-export function installEnvironment(state,project,{locked = false} = {}) {
-  if (!Object.hasOwn(ENV_PROJECTS,project)) return {state,error:'Choose Project 1 or Project 2.'};
+export function installEnvironment(state, project, {locked = false} = {}) {
+  const packages = locked ? state.locks[project] : resolvePackages(state.required[project], state.newer);
+  if (!packages) return {state, error:'Create a lock for this project first.'};
+  if (locked && packages.coursekit !== state.required[project]) return {state, error:'The lock no longer matches this requirement. uv sync --locked would report an error; recreate the lock.'};
   const destination = state.isolated ? project : 'shared';
-  const lock = state.locks[destination];
-  if (locked) {
-    if (!lock) return {state,error:'No saved lock exists for this environment. Add the project dependency first.'};
-    if (!lockMatches(lock,project)) return {state,error:'The saved lock does not match this project. uv sync --locked cannot resolve a changed requirement.'};
-    return {state:{...state,installed:{...state.installed,[destination]:{...lock}}},error:null};
-  }
-
-  if (!state.isolated) {
-    // The lock retains the direct requirements when an environment is deleted.
-    const existing = {...state.installed.shared,...state.locks.shared};
-    const requested = new Set(Object.keys(ENV_PROJECTS).filter(key => Object.hasOwn(existing,ENV_PROJECTS[key].package)));
-    requested.add(project);
-    if (requested.size > 1) {
-      return {state,error:`No solution: ${ENV_PROJECTS.a.spec} requires protobuf ${ENV_PROJECTS.a.protobufRange}, while ${ENV_PROJECTS.b.spec} requires protobuf ${ENV_PROJECTS.b.protobufRange}. These ranges do not overlap. The installed packages and saved lock are unchanged.`};
-    }
-  }
-
-  const packages = lockMatches(lock,project) ? lock : resolvePackages(project);
-  return {
-    state:{...state,installed:{...state.installed,[destination]:{...packages}},locks:{...state.locks,[destination]:{...packages}}},
-    error:null
-  };
+  return {state:{...state, installed:{...state.installed, [destination]:{...packages}}}, error:null};
 }

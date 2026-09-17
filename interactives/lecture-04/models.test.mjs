@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {pipeline,SAMPLE_DATA,commandLookup,inheritVariable,routeStreams,controlTrace,ENV_PROJECTS,createEnvironmentState,resolvePackages,protobufCompatibility,environmentState,installEnvironment} from './models.mjs';
+import {pipeline,SAMPLE_DATA,commandLookup,inheritVariable,routeStreams,controlTrace,resolvePackages,environmentState,installEnvironment} from './models.mjs';
 
 test('pipeline normalizes before deduplication; validates range and missing scores',()=>{
   const result=pipeline(SAMPLE_DATA);
@@ -67,114 +67,20 @@ test('AND, OR, and sequential lists keep the status of the last executed command
     assert.equal(trace.at(-1).output,`${runs?second:first}\n`);
   }
 });
-test('protobuf ranges are disjoint and compare numeric version components',()=>{
-  for (const [version,expected] of [
-    ['3.99.99',{a:false,b:false}],['4.0.0',{a:true,b:false}],
-    ['4.25.3',{a:true,b:false}],['4.99.99',{a:true,b:false}],
-    ['5',{a:false,b:false}],['6.33.4',{a:false,b:false}],
-    ['6.33.5',{a:false,b:true}],['6.33.10',{a:false,b:true}],
-    ['7',{a:false,b:true}],['7.99.99',{a:false,b:true}],
-    ['8',{a:false,b:false}],['10.0.0',{a:false,b:false}],
-    ['',{a:false,b:false}],['6.33.5rc1',{a:false,b:false}]
-  ]) assert.deepEqual(protobufCompatibility(version),expected,version);
+function env(){return {isolated:false,required:{a:'1.0',b:'2.0'},installed:{shared:resolvePackages('1.0'),a:null,b:null},locks:{a:null,b:null},newer:false};}
+test('shared install changes both projects; isolated install leaves the other untouched',()=>{
+  const shared=installEnvironment(env(),'b').state;
+  assert.deepEqual(environmentState(shared).map(project=>project.ok),[false,true]);
+  let isolated={...env(),isolated:true};
+  isolated=installEnvironment(isolated,'a').state;isolated=installEnvironment(isolated,'b').state;
+  assert.deepEqual(environmentState(isolated).map(project=>project.ok),[true,true]);
 });
-test('environment reset starts empty and each project resolves its real pinned packages',()=>{
-  assert.deepEqual(createEnvironmentState(),{isolated:false,installed:{shared:null,a:null,b:null},locks:{shared:null,a:null,b:null}});
-  assert.deepEqual(resolvePackages('a'),{'dbt-core':'1.7.14',protobuf:'4.25.8'});
-  assert.deepEqual(resolvePackages('b'),{'google-cloud-pubsub':'2.40.0',protobuf:'6.33.5'});
-  assert.equal(ENV_PROJECTS.a.spec,'dbt-core==1.7.14');
-  assert.equal(ENV_PROJECTS.b.spec,'google-cloud-pubsub==2.40.0');
-  const empty = environmentState(createEnvironmentState());
-  assert.deepEqual(empty.map(project=>project.missing),[true,true]);
-  assert.deepEqual(empty.map(project=>project.ok),[false,false]);
-});
-test('shared resolution rejects disjoint requirements and preserves install and lock in either order',()=>{
-  for (const [first,second] of [['a','b'],['b','a']]) {
-    const successful = installEnvironment(createEnvironmentState(),first);
-    assert.equal(successful.error,null);
-    const state = successful.state;
-    const before = JSON.parse(JSON.stringify(state));
-    assert.deepEqual(state.installed.shared,resolvePackages(first));
-    assert.deepEqual(state.locks.shared,resolvePackages(first));
-    const rejected = installEnvironment(state,second);
-    assert.match(rejected.error,/No solution/);
-    assert.strictEqual(rejected.state,state);
-    assert.deepEqual(state,before);
-    const projects = environmentState(state);
-    assert.equal(projects.find(project=>project.project===first).ok,true);
-    assert.equal(projects.find(project=>project.project===second).missing,true);
-    assert.equal(projects.find(project=>project.project===second).ok,false);
-  }
-});
-test('shared requirements survive environment deletion through the saved lock',()=>{
-  const installed = installEnvironment(createEnvironmentState(),'a').state;
-  const deleted = {...installed,installed:{...installed.installed,shared:null}};
-  const rejected = installEnvironment(deleted,'b');
-  assert.match(rejected.error,/No solution/);
-  assert.strictEqual(rejected.state,deleted);
-  const restored = installEnvironment(deleted,'a',{locked:true});
-  assert.equal(restored.error,null);
-  assert.deepEqual(restored.state.installed.shared,installed.locks.shared);
-});
-test('isolated additions and automatic locks are independent',()=>{
-  const initial = {...createEnvironmentState(),isolated:true};
-  const first = installEnvironment(initial,'a').state;
-  const before = JSON.parse(JSON.stringify(first));
-  const second = installEnvironment(first,'b').state;
-  assert.deepEqual(second.installed.a,resolvePackages('a'));
-  assert.deepEqual(second.installed.b,resolvePackages('b'));
-  assert.deepEqual(second.locks.a,resolvePackages('a'));
-  assert.deepEqual(second.locks.b,resolvePackages('b'));
-  assert.equal(second.installed.shared,null);
-  assert.deepEqual(environmentState(second).map(project=>project.ok),[true,true]);
-  assert.deepEqual(first,before);
-});
-test('repeat additions prefer a compatible saved lock and keep exact transitive versions',()=>{
-  const initial = installEnvironment(createEnvironmentState(),'a').state;
-  const pinned = {...initial,locks:{...initial.locks,shared:{'dbt-core':'1.7.14',protobuf:'4.25.3'}}};
-  const repeated = installEnvironment(pinned,'a');
-  assert.equal(repeated.error,null);
-  assert.deepEqual(repeated.state.installed.shared,pinned.locks.shared);
-  assert.equal(repeated.state.locks.shared.protobuf,'4.25.3');
-  assert.notStrictEqual(repeated.state.installed.shared,repeated.state.locks.shared);
-});
-test('locked sync recreates a deleted isolated environment without changing either lock',()=>{
-  let state = {...createEnvironmentState(),isolated:true};
-  state = installEnvironment(state,'a').state;
-  state = installEnvironment(state,'b').state;
-  const deleted = {...state,installed:{...state.installed,a:null}};
-  const rebuilt = installEnvironment(deleted,'a',{locked:true});
-  assert.equal(rebuilt.error,null);
-  assert.deepEqual(rebuilt.state.installed.a,state.locks.a);
-  assert.deepEqual(rebuilt.state.installed.b,state.installed.b);
-  assert.deepEqual(rebuilt.state.locks,state.locks);
-  assert.notStrictEqual(rebuilt.state.installed.a,rebuilt.state.locks.a);
-  assert.equal(deleted.installed.a,null);
-});
-test('locked sync requires a matching direct requirement and compatible dependency',()=>{
-  const empty = createEnvironmentState();
-  assert.match(installEnvironment(empty,'a',{locked:true}).error,/No saved lock/);
-  const installed = installEnvironment(empty,'a').state;
-  assert.match(installEnvironment(installed,'b',{locked:true}).error,/does not match/);
-  for (const packages of [
-    {'dbt-core':'1.7.13',protobuf:'4.25.3'},
-    {'dbt-core':'1.7.14',protobuf:'6.33.5'},
-    {'dbt-core':'1.7.14','google-cloud-pubsub':'2.40.0',protobuf:'4.25.3'}
-  ]) {
-    const stale = {...empty,locks:{...empty.locks,shared:packages}};
-    const rejected = installEnvironment(stale,'a',{locked:true});
-    assert.match(rejected.error,/does not match/);
-    assert.strictEqual(rejected.state,stale);
-  }
-});
-test('environment operations are deterministic and do not mutate their inputs',()=>{
-  const state = Object.freeze({isolated:false,installed:Object.freeze({shared:null,a:null,b:null}),locks:Object.freeze({shared:null,a:null,b:null})});
-  const first = installEnvironment(state,'a');
-  assert.deepEqual(first,installEnvironment(state,'a'));
-  assert.deepEqual(state,createEnvironmentState());
-  assert.notStrictEqual(first.state.installed.shared,first.state.locks.shared);
-  const copy = resolvePackages('a');copy.protobuf='5.0.0';
-  assert.equal(resolvePackages('a').protobuf,'4.25.8');
-  const reset = createEnvironmentState();reset.installed.shared=copy;
-  assert.equal(createEnvironmentState().installed.shared,null);
+test('lock restores transitive versions after registry changes and rejects stale requirements',()=>{
+  const state=env();state.isolated=true;state.locks.a=resolvePackages('1.0');state.newer=true;
+  const fresh=installEnvironment(state,'a').state;
+  assert.equal(fresh.installed.a.helper,'1.5');
+  const locked=installEnvironment(fresh,'a',{locked:true}).state;
+  assert.equal(locked.installed.a.helper,'1.4');
+  assert.ok(installEnvironment(state,'b',{locked:true}).error);
+  state.required.a='2.0';assert.ok(installEnvironment(state,'a',{locked:true}).error);
 });
