@@ -1,4 +1,5 @@
-import {SAMPLE_DATA,pipeline,commandLookup,inheritVariable,STREAM_MODES,routeStreams,controlTrace,ENV_PROJECTS,createEnvironmentState,protobufCompatibility,environmentState,installEnvironment} from './models.mjs?v=20260917-uv-conflict';
+import {SAMPLE_DATA,pipeline,commandLookup,inheritVariable,STREAM_MODES,routeStreams,controlTrace,ENV_PROJECTS,createEnvironmentState,protobufCompatibility,environmentState,installEnvironment} from './models.mjs?v=20260917-venv-intro';
+import {createVirtualEnvironmentDemo,renderVirtualEnvironment} from './venv-lab.mjs?v=20260917-venv-intro';
 
 const $ = selector => document.querySelector(selector);
 const esc = value => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -8,7 +9,8 @@ const activities = [
   {id:'path',number:'02',name:'Follow the PATH',short:'PATH & export',description:'Choose which program runs, then see what a child process inherits.',prompt:'Move /usr/bin above /usr/local/bin. Which Python runs? Does exporting PET change PATH?',tiles:['shell','PATH','process'],source:'Slides 9, 13–16'},
   {id:'streams',number:'03',name:'Route the output',short:'Streams',description:'Send stdout and stderr to a terminal, a file, or the next command.',prompt:'Run append twice, then replace once. Next, pipe stdout: where does the warning go?',tiles:['stdout','→','file / pipe'],source:'Slides 4, 20, 34, 39'},
   {id:'control',number:'04',name:'Step through logic',short:'Control flow',description:'Follow a branch, walk a loop, and predict what runs after a failure.',prompt:'Choose short circuits. Give check_data a nonzero status. Compare &&, ||, and ; before stepping.',tiles:['test','branch','result'],source:'Slides 21–28, 35–36'},
-  {id:'environments',number:'05',name:'Resolve a dependency conflict',short:'Environments',description:'Two setups, two terminals. See why dbt and Pub/Sub need separate project environments.',prompt:'Run Setup 1, then try adding Pub/Sub there. Why does the add fail while Setup 2 succeeds? Test a shared protobuf version, then rebuild either project from its lock.',tiles:['dbt-core','protobuf','Pub/Sub'],source:'Slides 47–53'}
+  {id:'venv',number:'05',name:'Build a virtual environment',short:'Virtual environments',description:'See what .venv contains, create one with uv, and discover which Python can use its packages.',prompt:'Create the environment before installing requests. Which interpreter can import it? In the environment-only workflow, activate and deactivate the terminal. Do the packages disappear?',tiles:['Python','.venv','your code'],source:'Slides 47–53'},
+  {id:'environments',number:'06',name:'Resolve a dependency conflict',short:'Dependency conflicts',description:'Two setups, two terminals. See why dbt and Pub/Sub need separate project environments.',prompt:'Run Setup 1, then try adding Pub/Sub there. Why does the add fail while Setup 2 succeeds? Test a shared protobuf version, then rebuild either project from its lock.',tiles:['dbt-core','protobuf','Pub/Sub'],source:'Slides 47–53'}
 ];
 const initial = {
   pipeline:()=>({raw:SAMPLE_DATA,normalize:true,validate:true,unique:true,filter:false,minimum:80}),
@@ -19,7 +21,8 @@ const initial = {
   ]}),
   streams:()=>({mode:'replace',file:'earlier run\n',stdout:'Ada,91\nBob,82\n',stderr:'warning: Ada has a missing field\n',pattern:'Ada',runs:0,result:null}),
   control:()=>({mode:'branch',exists:true,names:'Ada, Bob, Cara',operator:'&&',first:0,second:0,step:0}),
-  environments:()=>createEnvironmentDemo()
+  environments:()=>createEnvironmentDemo(),
+  venv:()=>createVirtualEnvironmentDemo()
 };
 const states = Object.fromEntries(Object.entries(initial).map(([key,fn])=>[key,fn()]));
 let current = new URLSearchParams(location.search).get('activity');
@@ -36,7 +39,7 @@ function card(activity) {
 }
 function gallery() {
   document.title = 'Lecture 04 · Interactive scripting lab';
-  $('#main').innerHTML = `<section class="gallery-header"><div><p class="eyebrow">Lecture 04 / Student playground</p><h1>See the script.<br>Change what happens.</h1><p class="intro">Five small experiments for Bash, Python, and the ideas connecting them. Open one, make a prediction, then change the inputs.</p></div><div class="stamp">Made for class.<br>Ready to explore.<br>Each activity has its own link.</div></section><div class="gallery">${activities.map(card).join('')}</div><p class="section-note">These models run locally in this browser. They do not execute shell commands or install packages.</p>`;
+  $('#main').innerHTML = `<section class="gallery-header"><div><p class="eyebrow">Lecture 04 / Student playground</p><h1>See the script.<br>Change what happens.</h1><p class="intro">Six small experiments for Bash, Python, and the ideas connecting them. Open one, make a prediction, then change the inputs.</p></div><div class="stamp">Made for class.<br>Ready to explore.<br>Each activity has its own link.</div></section><div class="gallery">${activities.map(card).join('')}</div><p class="section-note">These models run locally in this browser. They do not execute shell commands or install packages.</p>`;
 }
 function activityPage() {
   if (!current) return gallery();
@@ -218,5 +221,5 @@ function updateEnvironments() {
   }).join('')}</div><p class="hint">The rejected add did not replace Setup 1’s packages. Moving Pub/Sub to project-2 lets each project satisfy its own protobuf requirement. Two terminal windows alone do not isolate packages; the separate project environments do.</p></section><section class="panel"><h2>What the lock preserves</h2><p class="hint">Each successful <code>uv add</code> resolves the project, updates <code>uv.lock</code>, and installs into its <code>.venv</code>. “Rebuild from lock” simulates an absent .venv, then uses <code>uv sync --locked</code> to restore the saved package versions.</p><p class="hint">This activity focuses on the protobuf conflict. Real resolution also considers other dependencies, Python versions, and your platform. The command examples select Python 3.11; installing a project is not simulated as silently overwriting an incompatible requirement.</p>${sourceLink('https://docs.astral.sh/uv/concepts/projects/sync/','uv: locking and syncing')}${sourceLink('https://pypi.org/project/dbt-core/1.7.14/','dbt-core 1.7.14')}${sourceLink('https://pypi.org/project/google-cloud-pubsub/2.40.0/','google-cloud-pubsub 2.40.0')}</section>`);
   updateVersionCheck();
 }
-const renderers={pipeline:renderPipeline,path:renderPath,streams:renderStreams,control:renderControl,environments:renderEnvironments};
+const renderers={pipeline:renderPipeline,path:renderPath,streams:renderStreams,control:renderControl,environments:renderEnvironments,venv:()=>renderVirtualEnvironment({state:states.venv,controls:$('#controls'),results:$('#results'),setResult})};
 activityPage();

@@ -10,7 +10,7 @@ const allowMissingLinks = process.argv.includes('--allow-missing-links');
 const unknownArgs = process.argv.slice(2).filter(arg => arg !== '--allow-missing-links');
 const errors = [];
 const warnings = [];
-const activities = new Set(['pipeline', 'path', 'streams', 'control', 'environments']);
+const activities = new Set(['pipeline', 'path', 'streams', 'control', 'venv', 'environments']);
 const wordLimit = 45;
 const definitionLimit = 18;
 const sourceSlideCount = 57;

@@ -30,7 +30,8 @@ The ↗ toolbar link opens the current topic's activity, or the activity gallery
 | PATH and environments | [Open](https://researcher111.github.io/DS2022-Final/interactives/lecture-04/index.html?activity=path) |
 | Output streams | [Open](https://researcher111.github.io/DS2022-Final/interactives/lecture-04/index.html?activity=streams) |
 | Control flow | [Open](https://researcher111.github.io/DS2022-Final/interactives/lecture-04/index.html?activity=control) |
-| Python environments | [Open](https://researcher111.github.io/DS2022-Final/interactives/lecture-04/index.html?activity=environments) |
+| Virtual environment setup | [Open](https://researcher111.github.io/DS2022-Final/interactives/lecture-04/index.html?activity=venv) |
+| Dependency conflicts | [Open](https://researcher111.github.io/DS2022-Final/interactives/lecture-04/index.html?activity=environments) |
 
 ## Run locally
 
