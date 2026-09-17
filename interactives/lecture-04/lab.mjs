@@ -1,4 +1,4 @@
-import {SAMPLE_DATA,pipeline,commandLookup,inheritVariable,STREAM_MODES,routeStreams,controlTrace,resolvePackages,environmentState,installEnvironment} from './models.mjs';
+import {SAMPLE_DATA,pipeline,commandLookup,inheritVariable,STREAM_MODES,routeStreams,controlTrace,ENV_PROJECTS,createEnvironmentState,protobufCompatibility,environmentState,installEnvironment} from './models.mjs?v=20260917-uv-conflict';
 
 const $ = selector => document.querySelector(selector);
 const esc = value => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -8,7 +8,7 @@ const activities = [
   {id:'path',number:'02',name:'Follow the PATH',short:'PATH & export',description:'Choose which program runs, then see what a child process inherits.',prompt:'Move /usr/bin above /usr/local/bin. Which Python runs? Does exporting PET change PATH?',tiles:['shell','PATH','process'],source:'Slides 9, 13–16'},
   {id:'streams',number:'03',name:'Route the output',short:'Streams',description:'Send stdout and stderr to a terminal, a file, or the next command.',prompt:'Run append twice, then replace once. Next, pipe stdout: where does the warning go?',tiles:['stdout','→','file / pipe'],source:'Slides 4, 20, 34, 39'},
   {id:'control',number:'04',name:'Step through logic',short:'Control flow',description:'Follow a branch, walk a loop, and predict what runs after a failure.',prompt:'Choose short circuits. Give check_data a nonzero status. Compare &&, ||, and ; before stepping.',tiles:['test','branch','result'],source:'Slides 21–28, 35–36'},
-  {id:'environments',number:'05',name:'Isolate a project',short:'Environments',description:'Make a version conflict, separate the projects, and rebuild from a lock.',prompt:'Install Project B into the shared environment. Can A still run? Try isolated environments next.',tiles:['project A','.venv','project B'],source:'Slides 47–53'}
+  {id:'environments',number:'05',name:'Resolve a dependency conflict',short:'Environments',description:'Two setups, two terminals. See why dbt and Pub/Sub need separate project environments.',prompt:'Run Setup 1, then try adding Pub/Sub there. Why does the add fail while Setup 2 succeeds? Test a shared protobuf version, then rebuild either project from its lock.',tiles:['dbt-core','protobuf','Pub/Sub'],source:'Slides 47–53'}
 ];
 const initial = {
   pipeline:()=>({raw:SAMPLE_DATA,normalize:true,validate:true,unique:true,filter:false,minimum:80}),
@@ -19,7 +19,7 @@ const initial = {
   ]}),
   streams:()=>({mode:'replace',file:'earlier run\n',stdout:'Ada,91\nBob,82\n',stderr:'warning: Ada has a missing field\n',pattern:'Ada',runs:0,result:null}),
   control:()=>({mode:'branch',exists:true,names:'Ada, Bob, Cara',operator:'&&',first:0,second:0,step:0}),
-  environments:()=>({isolated:false,required:{a:'1.0',b:'2.0'},installed:{shared:resolvePackages('1.0'),a:null,b:null},locks:{a:null,b:null},newer:false,message:'Project A works in the shared environment. Install B to reveal the conflict.',error:false})
+  environments:()=>createEnvironmentDemo()
 };
 const states = Object.fromEntries(Object.entries(initial).map(([key,fn])=>[key,fn()]));
 let current = new URLSearchParams(location.search).get('activity');
@@ -143,30 +143,80 @@ function updateControl() {
   $('#step').disabled=state.step===trace.length;$('#run-all').disabled=state.step===trace.length;$('#restart').disabled=state.step===0;
 }
 
+function setupTranscript(project) {
+  const spec=ENV_PROJECTS[project];
+  return [
+    {kind:'command',text:`$ uv init --no-package --python 3.11 ${spec.directory}\n$ cd ${spec.directory}\n$ uv add ${spec.spec}`},
+    {kind:'output',text:`Selected packages in this simulation:\n${spec.spec}\nprotobuf==${spec.protobufVersion}`}
+  ];
+}
+function conflictAttempt(env) {
+  const shared={...createEnvironmentState(),installed:{shared:env.installed.a,a:null,b:null},locks:{shared:env.locks.a,a:null,b:null}};
+  return installEnvironment(shared,'b');
+}
+function conflictTranscript(error) {
+  return [
+    {kind:'command',text:`$ uv add ${ENV_PROJECTS.b.spec}`},
+    {kind:'error',text:`No solution found (simulated summary)\n\n${ENV_PROJECTS.a.spec}\n  requires protobuf ${ENV_PROJECTS.a.protobufRange}\n${ENV_PROJECTS.b.spec}\n  requires protobuf ${ENV_PROJECTS.b.protobufRange}\n\n${error?'These ranges do not overlap.\nInstalled packages and uv.lock are unchanged.':'No conflict reported.'}`}
+  ];
+}
+function createEnvironmentDemo() {
+  let env={...createEnvironmentState(),isolated:true};
+  env=installEnvironment(env,'a').state;
+  env=installEnvironment(env,'b').state;
+  const conflict=conflictAttempt(env);
+  return {env,candidate:'4.25.8',logs:{a:[...setupTranscript('a'),...conflictTranscript(conflict.error)],b:setupTranscript('b')},conflict:true,message:'Setup 1 rejected the incompatible add. Setup 2 succeeds in its own environment.'};
+}
 function renderEnvironments() {
   const state=states.environments;
-  $('#controls').innerHTML=`<h2>Build the environments</h2><label class="field"><span>Where packages are installed</span><select id="isolation"><option value="shared" ${!state.isolated?'selected':''}>One shared environment</option><option value="isolated" ${state.isolated?'selected':''}>A separate .venv per project</option></select></label><label class="field"><span>Project A requires coursekit</span><select id="require-a">${['1.0','2.0'].map(v=>`<option value="${v}" ${state.required.a===v?'selected':''}>== ${v}</option>`).join('')}</select></label><label class="field"><span>Project B requires coursekit</span><select id="require-b">${['1.0','2.0'].map(v=>`<option value="${v}" ${state.required.b===v?'selected':''}>== ${v}</option>`).join('')}</select></label><hr class="control-divider"><label class="check"><input type="checkbox" id="newer" ${state.newer?'checked':''}>New compatible helper releases available</label><p class="hint">The model resolves helper 1.4 / 2.1 initially, and 1.5 / 2.2 after an update. A saved lock keeps the earlier resolution.</p><p class="section-note">coursekit and helper are fictional teaching packages. Each project has one direct dependency and one transitive dependency. Real resolution also considers Python, platforms, and other constraints.</p>`;
-  $('#controls').oninput=()=>{
-    state.isolated=$('#isolation').value==='isolated';state.required.a=$('#require-a').value;state.required.b=$('#require-b').value;state.newer=readBool('newer');state.message='Configuration changed. Install a project, or rebuild from its saved lock.';state.error=false;updateEnvironments();
-  };
+  $('#controls').innerHTML=`<h2>Try one shared version</h2><label class="field"><span>Candidate protobuf version</span><select id="protobuf-version">${['4.25.8','5.29.5','6.33.4','6.33.5','7.0.0','8.0.0'].map(version=>`<option value="${version}" ${state.candidate===version?'selected':''}>${version}</option>`).join('')}</select><small>Test the version ranges. This does not change either installed environment.</small></label><div id="protobuf-check"></div><hr class="control-divider"><h3>The shared dependency</h3><p class="hint"><code>dbt-core</code> and <code>google-cloud-pubsub</code> both need <code>protobuf</code>. Neither depends on the other.</p><p class="hint">No version can satisfy both ranges. Separate projects can choose different versions.</p><p class="section-note">Browser simulation using the README’s real package requirements. It installs nothing. Terminal output is a simplified transcript; the protobuf versions shown are fixed examples, not predictions of today’s uv resolution.</p>${sourceLink('https://github.com/ksiller/DS2022/blob/main/class/03-scripting/README.md#why-isolate-environments','Course README: the conflict example')}`;
+  $('#controls').oninput=()=>{state.candidate=$('#protobuf-version').value;updateVersionCheck();};
   $('#results').onclick=event=>{
     const button=event.target.closest('[data-env-action]');if(!button)return;
     const project=button.dataset.project,action=button.dataset.envAction;
-    if(action==='lock'){
-      state.locks[project]=resolvePackages(state.required[project],state.newer);state.message=`Project ${project.toUpperCase()}: saved a resolved lock for coursekit ${state.locks[project].coursekit} and helper ${state.locks[project].helper}.`;state.error=false;
-    }else{
-      const next=installEnvironment(state,project,{locked:action==='sync'});
-      if(next.error){state.error=true;state.message=next.error;}
-      else{Object.assign(state,next.state);state.error=false;state.message=`Project ${project.toUpperCase()}: ${action==='sync'?'recreated the environment from its saved lock':'installed using a fresh dependency resolution'}. ${!state.isolated?'Both projects now see the shared packages.':'The other project’s environment is unchanged.'}`;}
+    if(action==='conflict'){
+      const attempt=conflictAttempt(state.env);
+      state.logs.a=[...setupTranscript('a'),...conflictTranscript(attempt.error)];
+      state.conflict=Boolean(attempt.error);
+      state.message='No shared protobuf version exists. The failed add leaves Setup 1 and Setup 2 unchanged.';
+    }else if(action==='setup'){
+      const next=installEnvironment(state.env,project);
+      if(next.error){state.message=next.error;}
+      else{
+        state.env=next.state;state.logs[project]=setupTranscript(project);
+        if(project==='a')state.conflict=false;
+        state.message=`${ENV_PROJECTS[project].name} is ready. Its own .venv and uv.lock keep the other setup unchanged.`;
+      }
+    }else if(action==='sync'){
+      const empty={...state.env,installed:{...state.env.installed,[project]:null}};
+      const next=installEnvironment(empty,project,{locked:true});
+      if(next.error){state.message=next.error;}
+      else{
+        state.env=next.state;
+        const spec=ENV_PROJECTS[project],actual=state.env.installed[project];
+        state.logs[project]=[...state.logs[project],{kind:'command',text:'$ uv sync --locked'},{kind:'output',text:`Rebuilt .venv from this project’s lock:\n${spec.package}==${actual[spec.package]}\nprotobuf==${actual.protobuf}`}];
+        if(project==='a')state.conflict=false;
+        state.message=`${spec.name}: recreated .venv with the saved versions. The other environment is unchanged.`;
+      }
     }
     updateEnvironments();
   };
   updateEnvironments();
 }
+function updateVersionCheck() {
+  const state=states.environments,compatible=protobufCompatibility(state.candidate);
+  $('#protobuf-check').innerHTML=`<div class="version-check" role="status">${['a','b'].map(project=>`<div class="version-result ${compatible[project]?'matches':'mismatch'}"><strong>${project==='a'?'Setup 1 · dbt':'Setup 2 · Pub/Sub'}</strong><code>${esc(ENV_PROJECTS[project].protobufRange)}</code><span>${compatible[project]?'✓ Fits this range':'× Outside this range'}</span></div>`).join('')}<p class="hint">A shared version must satisfy both ranges.</p></div>`;
+}
 function updateEnvironments() {
-  const state=states.environments,projects=environmentState(state);
-  const packageBox=(packages,label,status)=>`<div class="package-box ${status==='conflict'?'error':''}"><h3>${label}</h3><pre>${packages?`coursekit == ${packages.coursekit}\nhelper    == ${packages.helper}`:'No packages installed'}</pre></div>`;
-  setResult(`<div class="message ${state.error?'error':''}" role="status">${esc(state.message)}</div><section class="panel"><div class="panel-head"><h2>${state.isolated?'Two projects. Two environments.':'Two projects. One environment.'}</h2><span class="badge ${projects.some(project=>!project.ok)?'error':''}">${projects.filter(project=>project.ok).length} / 2 ready</span></div><div class="split">${projects.map(project=>`<div class="env-project"><div class="panel-head"><h3>Project ${project.project.toUpperCase()}</h3><span class="badge ${project.ok?'':'error'}">${project.ok?'Ready':project.missing?'Missing':'Conflict'}</span></div><p>Requires <code>coursekit == ${project.required}</code></p>${state.isolated?packageBox(project.actual,`${project.project}/.venv`,project.ok?'ok':project.missing?'missing':'conflict'):`<p style="font-size:13px;color:${project.ok?'var(--accent)':'var(--orange)'}">${project.ok?'✓ Requirement satisfied':'× '+(project.missing?'Package not installed':`Sees ${project.actual.coursekit}; needs ${project.required}`)}</p>`}<div class="run-row"><button id="install-${project.project}" data-env-action="install" data-project="${project.project}">Install ${project.project.toUpperCase()}</button><button id="lock-${project.project}" data-env-action="lock" data-project="${project.project}">Create lock</button><button id="sync-${project.project}" data-env-action="sync" data-project="${project.project}" ${!state.locks[project.project]?'disabled':''}>Sync locked</button></div><div class="lock-card">${state.locks[project.project]?`Saved lock<br><code>coursekit == ${state.locks[project.project].coursekit}<br>helper == ${state.locks[project.project].helper}</code>`:'No saved lock yet.'}</div></div>`).join('')}</div>${!state.isolated?`<div class="env-connector" aria-hidden="true">↘ &nbsp; ↙</div>${packageBox(state.installed.shared,'Shared site-packages',projects.every(p=>p.ok)?'ok':'conflict')}`:''}<p class="hint">Install performs a fresh resolution in this model. Create lock records that resolution. Sync locked uses the recorded versions and rejects a lock that no longer matches the project’s requirement.</p></section><div class="terminal"><div class="label">Real project workflow · one project at a time</div><pre>uv init project-a\ncd project-a\nuv add requests\n# Commit pyproject.toml and uv.lock\n# On another machine, in this project:\nuv sync --locked\nuv run --locked main.py</pre></div><section class="panel"><h2>Rebuild the same package selection</h2><p class="hint" style="font-size:13px">In isolated mode: install A, create A’s lock, then enable new helper releases. Install A again to see helper change. Sync locked restores the saved versions.</p><p class="hint">Real uv normally reuses its existing lock during <code>uv add</code>, <code>uv sync</code>, and <code>uv run</code>. An available newer release does not silently update a valid lock. Matching package versions supports reproducibility; operating system, interpreter, data, and configuration still matter.</p>${sourceLink('https://docs.astral.sh/uv/concepts/projects/sync/','uv: locking and syncing')}</section>`);
+  const state=states.environments,projects=environmentState(state.env);
+  setResult(`<div class="message" role="status">${esc(state.message)}</div><div class="setup-terminals">${projects.map(project=>{
+    const id=project.project,spec=ENV_PROJECTS[id],conflicted=id==='a'&&state.conflict;
+    return `<section class="terminal setup-terminal" aria-labelledby="setup-title-${id}"><div class="setup-terminal-header"><div><div class="label">${esc(spec.directory)} / .venv</div><h2 id="setup-title-${id}">Setup ${id==='a'?'1 · dbt':'2 · Pub/Sub'}</h2></div><span class="badge ${conflicted?'error':''}">${conflicted?'Conflict rejected':'Ready'}</span></div><div class="terminal-transcript" tabindex="0" aria-label="Setup ${id==='a'?'1':'2'} simulated terminal output">${state.logs[id].map(entry=>`<pre class="terminal-${entry.kind}">${esc(entry.text)}</pre>`).join('')}</div><div class="run-row"><button id="setup-${id}" data-env-action="setup" data-project="${id}">Run setup ${id==='a'?'1':'2'}</button>${id==='a'?'<button id="try-conflict" data-env-action="conflict" data-project="a">Try adding Pub/Sub here</button>':''}<button id="sync-${id}" data-env-action="sync" data-project="${id}">Rebuild from lock</button></div></section>`;
+  }).join('')}</div><section class="panel"><div class="panel-head"><h2>Each setup keeps its own packages</h2><span class="badge">${projects.filter(project=>project.ok).length} / 2 ready</span></div><div class="split">${projects.map(project=>{
+    const id=project.project,spec=ENV_PROJECTS[id];
+    return `<div class="env-project"><h3>${esc(spec.directory)}</h3><p>Requires <code>${esc(spec.spec)}</code><br><code>protobuf ${esc(spec.protobufRange)}</code></p><div class="package-box"><h3>${esc(spec.directory)}/.venv</h3><pre>${esc(spec.spec)}\nprotobuf==${esc(project.actual.protobuf)}</pre></div><div class="lock-card"><strong>uv.lock</strong> keeps this setup’s resolved versions.<br><code>protobuf==${esc(state.env.locks[id].protobuf)}</code></div></div>`;
+  }).join('')}</div><p class="hint">The rejected add did not replace Setup 1’s packages. Moving Pub/Sub to project-2 lets each project satisfy its own protobuf requirement. Two terminal windows alone do not isolate packages; the separate project environments do.</p></section><section class="panel"><h2>What the lock preserves</h2><p class="hint">Each successful <code>uv add</code> resolves the project, updates <code>uv.lock</code>, and installs into its <code>.venv</code>. “Rebuild from lock” simulates an absent .venv, then uses <code>uv sync --locked</code> to restore the saved package versions.</p><p class="hint">This activity focuses on the protobuf conflict. Real resolution also considers other dependencies, Python versions, and your platform. The command examples select Python 3.11; installing a project is not simulated as silently overwriting an incompatible requirement.</p>${sourceLink('https://docs.astral.sh/uv/concepts/projects/sync/','uv: locking and syncing')}${sourceLink('https://pypi.org/project/dbt-core/1.7.14/','dbt-core 1.7.14')}${sourceLink('https://pypi.org/project/google-cloud-pubsub/2.40.0/','google-cloud-pubsub 2.40.0')}</section>`);
+  updateVersionCheck();
 }
 const renderers={pipeline:renderPipeline,path:renderPath,streams:renderStreams,control:renderControl,environments:renderEnvironments};
 activityPage();
