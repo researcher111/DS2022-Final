@@ -11,6 +11,8 @@
 
 Each scene has `id`, `title`, `minutes`, `kind`, `steps`, `states`, `notes`, and `draw(d, step)`. `minutes` is an estimate, not a required fixed total. Source references belong in notes or `sources`. An optional `activity` identifies the direct student activity for the toolbar and teaching guide.
 
+Follow Lecture 05 for instructor notes: supply `teaching.idea`, one `teaching.builds` instruction per animation step, `teaching.question`, `teaching.answer`, and optional `teaching.context`. Use a one-sentence main idea and short, concrete cues such as “Point to the two Alice rows.” Explain what is visible at that step. Keep technical qualifications and class logistics in context. Derive the plain `notes` text from these fields so the two versions stay consistent. The presenter shows the current step with expandable answers; the teaching guide shows every step and answer.
+
 The canvas is 1280 × 720. Use the helpers in `slides/_shared/visuals.js`. Give drawing objects unique keys and retain their keys between animation steps. Drawing functions must be deterministic. The player handles animation timing.
 
 Limit **all visible words per build to 45**, including code, values, diagram labels, and titles. Keep definitions to 18 words. Prefer cutting text to shrinking type. Reserve an open writing area rather than filling the entire canvas. Complex explanations belong in notes. Use actual editable diagrams, and show state changes that students can reason about.

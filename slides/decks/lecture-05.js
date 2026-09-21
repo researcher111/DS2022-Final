@@ -24,11 +24,19 @@
     labels.forEach((label,i)=>{box(d,'flow-'+i,x+i*(w+gap),y,w,92,label,i===active);if(i<labels.length-1)d.arrow('flow-edge-'+i,x+i*(w+gap)+w+12,y+46,x+(i+1)*(w+gap)-12,y+46,P.green,4);});
   }
   function table(d,k,x,y,widths,rows,options={}) {d.table(k,x,y,widths,rows,Object.assign({rowHeight:58,fontSize:29},options));}
-  function scene(name,states,draw,notes,sourceSlides,extra={}) {
+  function scene(name,states,draw,teaching,sourceSlides,extra={}) {
     const sourceNumbers=sourceSlides.split(',').flatMap(part=>{const ends=part.trim().split(/[–-]/).map(Number);return ends.length===1?ends:Array.from({length:ends[1]-ends[0]+1},(_,i)=>ends[0]+i);});
-    scenes.push(Object.assign({id:name.toLowerCase().replace(/[^a-z0-9]+/g,'-'),title:name,kind:'visual',steps:states.length,states,draw,minutes:2,sourceSlides:sourceNumbers,notes:'Source PowerPoint slides '+sourceSlides+'.\n\n'+notes},extra));
+    const notes=[
+      'Main idea: '+teaching.idea,
+      ...teaching.builds.map((value,i)=>'Step '+(i+1)+': '+value),
+      'Ask the class: '+teaching.question,
+      'Expected answer: '+teaching.answer,
+      ...(teaching.context?['Teaching context: '+teaching.context]:[]),
+      'Source PowerPoint slides '+sourceSlides+'.'
+    ].join('\n\n');
+    scenes.push(Object.assign({id:name.toLowerCase().replace(/[^a-z0-9]+/g,'-'),title:name,kind:'visual',steps:states.length,states,draw,minutes:2,sourceSlides:sourceNumbers,teaching,notes},extra));
   }
-  function exercise(activity,name,minutes,tasks,question,sourceSlides,notes) {
+  function exercise(activity,name,minutes,tasks,question,sourceSlides,teaching) {
     scene('Exercise: '+name,['Switch to the interactive exercise'],d=>{
       title(d,'Switch to the interactive');
       d.text('exercise-name',80,200,name+' · '+minutes+' minutes',40,P.green,'start',600);
@@ -36,7 +44,7 @@
       d.text('exercise-discussion',80,455,'Return ready to explain:',28,P.muted,'start');
       d.text('exercise-question',80,505,question,33,P.green,'start');
       d.text('exercise-link-hint',80,145,'Open this exercise with ↗ below',27,P.muted,'start');
-    },'Pause the lecture and ask students to switch to this activity on their own screens. The green ↗ toolbar link opens the correct exercise in a separate tab. Allow approximately '+minutes+' minutes, then bring students back to discuss the displayed question. Reset the activity first if it was used earlier.\n\n'+notes,sourceSlides,{kind:'activity',activity,activityBreak:true,minutes});
+    },teaching,sourceSlides,{kind:'activity',activity,activityBreak:true,minutes});
   }
   const EMPLOYEES=[['1','Alice','26'],['2','Bob','56'],['3','Alice','56']];
   const JOBS=[['J01','Chef'],['J02','Waiter'],['J03','Bartender']];
@@ -49,44 +57,112 @@
     d.text('course',80,135,'DS 2022',30,P.green,'start',650);d.text('name',80,235,'SQL',88,P.ink,'start',650);
     d.text('date',80,330,'September 22 & 24, 2026',30,P.muted,'start');
     if(s){text(d,'design',220,450,'Design',34);text(d,'query',635,450,'Query',34);text(d,'connect',1050,450,'Connect',34);}
-  },'The uploaded lecture covers September 22 and September 24, 2026. It introduces databases, relational design, SQL, and a Python-to-database workflow. The second meeting starts at the schema practice scene. Suggested timings include group work and can span both class meetings. Ask learners to connect this lecture to last week’s scripts: where should a cleaned dataset live when several people need to read and update it?', '1–2',{kind:'title',minutes:1});
+  },{
+    "idea": "SQL connects database design, questions about data, and the programs that use the results.",
+    "builds": [
+      "Point to SQL and connect it to last week’s scripts: we cleaned data, and now we need somewhere to organize and share it. Read the two dates as the two class meetings for this material.",
+      "Point to Design, Query, and Connect in order. Say that we will decide where each fact belongs, ask for the rows we need, and connect Python to the database."
+    ],
+    "question": "What becomes harder when two people need to update the same cleaned dataset?",
+    "answer": "They must coordinate changes, agree on the data’s structure, and avoid losing or contradicting each other’s work.",
+    "context": "The September 24 meeting starts at Schema and SQL practice. Timings include discussion and group work across both meetings."
+  }, '1–2',{kind:'title',minutes:1});
 
   scene('Questions about databases',['Individual ideas','A shared list'],(d,s)=>{
     title(d,'Questions about databases');text(d,'know',310,235,'What do you know?',36,P.blue);text(d,'want',940,235,'What do you want to know?',36,P.green);
     if(s){box(d,'group',410,355,460,100,'3–5 shared questions',true,P.green,35);}
-  },'The source opens with a Know/Want-to-know activity. Give table groups ten minutes to combine their individual questions into three to five SQL or NoSQL topics, then report one question to the room. Ask one person per group to record the agreed list using the instructor’s current class channel. The source contains a short submission URL; its current destination has not been verified, so do not assume it is still the active form. Revisit the questions at the end to distinguish answered questions from next-lecture topics.', '3',{kind:'activity',minutes:10});
+  },{
+    "idea": "A shared question list gives us specific things to investigate during the lecture.",
+    "builds": [
+      "Read the two prompts and ask students to look at their individual Know and Want-to-know notes. Have each person offer one question to their table before the group chooses its list.",
+      "Point to 3–5 shared questions and give groups ten minutes to combine overlapping questions into that many clear items. Ask one person to record the list in the current class channel, then return ready to share the question their group most wants answered."
+    ],
+    "question": "Which question would your group most like to answer, and what would count as an answer?",
+    "answer": "Accept a specific database question and an observable way to answer it, such as testing what happens when two users update one row.",
+    "context": "Use the instructor’s current submission channel; the older short submission link has not been verified. Keep the questions available to revisit at the end and before the NoSQL lecture."
+  }, '3',{kind:'activity',minutes:10});
 
   scene('Storage and databases',['Storage interfaces','Database responsibilities'],(d,s)=>{
     title(d,'Storage and databases');
     ['Files','Blocks','Objects'].forEach((v,i)=>box(d,'storage-'+i,90+i*395,355,310,95,v,s===0,P.blue,34));
     if(s){box(d,'db',365,185,550,95,'Database management',true,P.green,35);[0,1,2].forEach(i=>d.arrow('storage-edge-'+i,640,290,245+i*395,340,P.green,3));}
-  },'File storage presents named files in directories. Block storage presents addressable blocks, often underneath a filesystem or database engine. Object storage presents objects identified by keys, often through a network API. The source mentions local files, the university HPC system, and Amazon S3. A database system adds data organization, query processing, rules, and coordinated access on top of storage. The arrows show possible underlying storage choices, not a claim that every DBMS directly uses all three. Students will not directly operate raw block devices in this class.', '5',{minutes:2});
+  },{
+    "idea": "A database adds organization and rules to the storage that holds its data.",
+    "builds": [
+      "Point to Files, Blocks, and Objects. Describe a file by its path, a block by its address, and an object by its key; these are different ways to locate stored data.",
+      "Point to Database management and follow the arrows down to storage. Explain that the database adds queries, relationships, rules, and coordinated access while still needing somewhere to keep its data."
+    ],
+    "question": "What does database management add beyond a place to save bytes?",
+    "answer": "It organizes the data, answers queries, enforces declared rules, and coordinates access from applications.",
+    "context": "The arrows show possible storage choices; one database need not use all three. Local files, university HPC filesystems, and Amazon S3 are familiar examples. This course does not require operating raw block devices."
+  }, '5',{minutes:2});
 
   scene('Database operations',['Create','Read','Update','Delete'],(d,s)=>{
     title(d,'Database operations');const labels=['Create','Read','Update','Delete'];
     labels.forEach((v,i)=>box(d,'operation-'+i,65+i*305,210,235,85,v,i===s,P.green,32));
     const rows=s===0?[['1','Alice']]:s===1?[['1','Alice'],['2','Bob']]:s===2?[['1','Alice'],['2','Robert']]:[['1','Alice']];
     table(d,'rows',380,345,[170,350],[['id','name'],...rows],{rowHeight:55,fontSize:32,highlightRows:s===2?[2]:[]});
-  },'Databases store and organize data and support create, read, update, and delete operations, abbreviated CRUD. Here each build illustrates a different operation, not a script that should be replayed in this exact order. Create adds a row; read retrieves data; update changes an existing row; delete removes a row. A database can also represent relationships, including hierarchies and networks. Later scenes map these ideas to SQL statements. In CRUD, “create” commonly means inserting data, while SQL CREATE defines database objects.', '4, 6',{minutes:2});
+  },{
+    "idea": "CRUD names the four basic ways an application works with stored records.",
+    "builds": [
+      "Point to the highlighted Create label and the Alice row. Say that creating a record adds a new row to an existing table.",
+      "Point to Read and read the two displayed rows: 1 is Alice and 2 is Bob. Explain that retrieving these rows does not itself change either record.",
+      "Point to employee 2 and compare Bob with Robert. The identifier stays 2 while the stored name changes, which makes this an update.",
+      "Point to Delete and the remaining Alice row. Employee 2’s row is gone, but the table and its columns remain."
+    ],
+    "question": "Which operation changes Bob’s name while keeping the same employee record?",
+    "answer": "Update changes the name in the row identified by employee 2.",
+    "context": "Each build illustrates an operation rather than one continuous script; the read example starts with two existing rows. CRUD Create usually means inserting a record, while SQL CREATE defines an object such as a table."
+  }, '4, 6',{minutes:2});
 
   scene('Database management system',['A request','Query processing','Stored data and metadata'],(d,s)=>{
     flow(d,['Application','DBMS','Storage'],Math.min(s,2),270);
     if(s>=1)text(d,'processing',640,440,'plan  execute  enforce rules',29,P.green);
     if(s===2){text(d,'data',1010,230,'data + metadata',29,P.blue);}
-  },'Trace the source architecture diagram: a user works through an application or query tool; database management software processes the request and accesses stored data. The system also maintains metadata describing tables, columns, indexes, and other objects. Ask which component should reject an invalid relationship even if two different applications write to it. Expected: a declared database constraint gives both applications the same enforced rule. Distinguish the managed collection of data from the DBMS software used to access it.', '7',{kind:'definition',term:'DBMS',definition:'Software that stores, queries, and controls access to a database.',minutes:2});
+  },{
+    "idea": "The DBMS turns application requests into controlled access to stored data.",
+    "builds": [
+      "Read the DBMS definition, then point from Application toward DBMS. Explain that the application asks for an operation instead of editing the database’s storage directly.",
+      "Point to plan, execute, and enforce rules beneath the DBMS. Say that the DBMS chooses how to perform the request and checks the rules the database declares.",
+      "Point to data + metadata above Storage. Use one employee row as data and its column definitions or key constraints as metadata describing how that data is organized."
+    ],
+    "question": "If two applications write to the same table, where can we enforce one shared rule for both?",
+    "answer": "Declare the rule as a database constraint so the DBMS checks writes from both applications.",
+    "context": "The database is the managed data and its objects; the DBMS is the software that manages them. A database can enforce only the rules represented in its constraints and transaction logic."
+  }, '7',{kind:'definition',term:'DBMS',definition:'Software that stores, queries, and controls access to a database.',minutes:2});
 
   scene('Data models',['Relational','Other common models','Workload matters'],(d,s)=>{
     title(d,'Data models');
     if(!s)table(d,'relational',245,205,[215,290,285],[['id','name','state'],...EMPLOYEES],{rowHeight:67,fontSize:33});
     if(s===1){[['Key-value','Redis'],['Document','MongoDB'],['Wide-column','Cassandra'],['Graph','Neo4j']].forEach(([a,b],i)=>{text(d,'model-'+i,380,205+i*88,a,34,P.green);text(d,'example-'+i,880,205+i*88,b,31,P.muted);});}
     if(s===2){flow(d,['Data shape','Queries','Constraints'],1,250);text(d,'choice',640,440,'Products combine capabilities',34,P.orange);}
-  },'The source groups MySQL, PostgreSQL, SQLite, SQL Server, and Oracle as relational examples and lists key-value, document, column-family, and graph databases. Redis and DynamoDB, MongoDB, Cassandra, and Neo4j/Neptune illustrate those other models, though products can support multiple models. SQL is a query language rather than a universal architecture boundary. Correct the source’s absolute comparisons: nonrelational products can validate schemas and types, support expressive queries, and still require application mapping. Relational systems are not inherently fast or slow for every workload. Discuss shape, query patterns, constraints, and operational needs before selecting a system.', '8–11',{minutes:3,sources:['https://www.mongodb.com/docs/manual/core/schema-validation/','https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/SQLtoNoSQL.html']});
+  },{
+    "idea": "Choose a data model by the relationships and operations the application needs.",
+    "builds": [
+      "Read one row across the table and then point down a column. A relational model organizes records into tables with named attributes, and a repeated name can still belong to different records.",
+      "Point to each model and its example: key-value, document, wide-column, and graph. Ask students what each name suggests about how related information is grouped or found.",
+      "Follow Data shape, Queries, and Constraints from left to right. Read Products combine capabilities and explain that a product label alone does not tell us how well it fits a workload."
+    ],
+    "question": "What information would you want before choosing a database for an application?",
+    "answer": "The data’s shape and relationships, the queries and updates it must support, the rules it must enforce, and its operational requirements.",
+    "context": "MySQL, PostgreSQL, SQLite, SQL Server, and Oracle are relational examples. SQL is a language, and products can support several models. Nonrelational databases can validate schemas and types, and neither family is inherently faster for every workload."
+  }, '8–11',{minutes:3,sources:['https://www.mongodb.com/docs/manual/core/schema-validation/','https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/SQLtoNoSQL.html']});
 
   scene('Scaling choices',['Vertical','Horizontal','Independent of data model'],(d,s)=>{
     title(d,'Scaling choices');text(d,'scaling-method',640,155,s?'Horizontal':'Vertical',32,P.green);
     if(!s){box(d,'machine',405,185,470,290,'One larger machine',true,P.blue,34);[0,1,2,3].forEach(i=>d.rect('capacity-'+i,465+i*80,380,58,45,P.blue,P.blue,3));}
     else{[0,1,2].forEach(i=>box(d,'node-'+i,125+i*365,240,300,150,'Node '+(i+1),true,P.green,34));d.line('network',275,435,1005,435,P.green,4);[0,1,2].forEach(i=>d.line('link-'+i,275+i*365,390,275+i*365,435,P.green,4));if(s===2)text(d,'scope',640,510,'SQL and NoSQL systems can use either',31,P.orange);}
-  },'Vertical scaling increases resources on one machine, such as CPU, memory, or storage throughput. Horizontal scaling distributes work across machines and introduces communication, partitioning, replication, and failure-handling decisions. Correction to source slide 12: these are not exclusive SQL versus NoSQL categories. Distributed relational products exist, and a nonrelational database may run on one machine. More nodes do not guarantee proportional speedup. Google Spanner is one documented relational example of scaling compute capacity; a product’s actual scaling model should be checked in its own documentation.', '12',{minutes:2,sources:['https://cloud.google.com/spanner/docs/compute-capacity']});
+  },{
+    "idea": "Scaling up one machine and spreading work across machines are different engineering choices.",
+    "builds": [
+      "Point to Vertical and the larger machine. Describe adding CPU, memory, or storage throughput while the work still runs on one machine.",
+      "Point to Horizontal and count the three connected nodes. Explain that distributing work also creates questions about where data lives, how machines communicate, and what happens when one fails.",
+      "Read SQL and NoSQL systems can use either. Emphasize that the data model does not decide the scaling architecture, then ask what new costs appear when work crosses the network."
+    ],
+    "question": "Why might three machines deliver less than three times the performance?",
+    "answer": "They spend time communicating and coordinating, and the work or data may not divide evenly among them.",
+    "context": "Horizontal scaling can involve partitioning and replication, which serve different purposes. Distributed relational systems such as Spanner exist; check a product’s actual scaling capabilities rather than treating SQL and NoSQL as scaling categories."
+  }, '12',{minutes:2,sources:['https://cloud.google.com/spanner/docs/compute-capacity']});
 
   scene('Recovery and backlog',['Service interruption','Requests accumulate','Controlled recovery'],(d,s)=>{
     title(d,'Recovery and backlog');
@@ -94,108 +170,283 @@
     d.arrow('request',355,305,915,305,s===0?P.line:P.green,4);
     const count=s===0?2:s===1?9:4;for(let i=0;i<count;i++)d.rect('request-'+i,420+(i%5)*85,210+Math.floor(i/5)*100,60,45,P.orangeLight,P.orange,5,2);
     text(d,'status',640,465,['Unavailable','Growing queue','Retry with backoff'][s],35,P.orange);
-  },'Use a generic failure scenario to explain the source’s useful recovery lesson. If a database or its network is unavailable, applications may accumulate work. Restoring connectivity does not instantly remove the backlog; uncontrolled retries can increase load. Ask how a client can retry safely when it does not know whether a previous write committed. Expected: bounded backoff and a design for detecting or avoiding duplicate operations. The source’s named outage dates, services, and durations conflict with the embedded images and have not been established here. This diagram is illustrative and makes no claim about those incidents.', '13',{minutes:2,sources:['https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/']});
+  },{
+    "idea": "Restoring a failed service does not instantly clear the work that accumulated during the failure.",
+    "builds": [
+      "Point from Applications to the unavailable Database and the waiting request markers. Ask students what the application should do with work that cannot complete yet.",
+      "Point to the larger queue and read Growing queue. Explain that new requests and repeated attempts can build up even while the underlying service is recovering.",
+      "Point to the smaller queue and read Retry with backoff. Explain that spacing retries helps control recovery load, and that repeated writes also need a way to avoid duplicate effects."
+    ],
+    "question": "If a client times out after sending a write, what does it still not know?",
+    "answer": "It may not know whether the database committed the write, so repeating it could apply the change twice.",
+    "context": "Use this as a hypothetical failure and recovery scenario; the incident dates, providers, and durations in the older material have not been verified. Backoff alone does not make retries safe: the application also needs an idempotency or duplicate-detection strategy."
+  }, '13',{minutes:2,sources:['https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/']});
 
   scene('A database in use',['Choose a product','Bring evidence'],(d,s)=>{
     title(d,'A database in use');['MySQL','Oracle','MongoDB','DynamoDB'].forEach((v,i)=>text(d,'product-'+i,215+i*280,235,v,33,i===s?P.green:P.ink));
     if(s)text(d,'question',640,400,'Who uses it, for which workload?',38,P.green);
-  },'Assign the source’s four database examples to table groups. Allow five minutes to find one organization that uses the assigned product and, if available, the application or data it supports. Require a dated primary source such as a company engineering article or the vendor’s named customer case study. Ask each group to record product, organization, workload, and source. Do not infer that a company uses the same database for all its applications. This is a student research exercise, not an unsupported customer claim in the lecture.', '14',{kind:'activity',minutes:5});
+  },{
+    "idea": "A documented workload tells us more about a database choice than a company name alone.",
+    "builds": [
+      "Point to MySQL, Oracle, MongoDB, and DynamoDB, and assign one product to each table group. Ask students to look for an organization’s own engineering account or a named customer case study.",
+      "Read Who uses it, for which workload? and give groups five minutes to record the product, organization, application or data, and a dated source. Return to the room ready to explain the particular workload supported by their evidence."
+    ],
+    "question": "What did your source establish about how the organization uses this database?",
+    "answer": "A complete response names the organization, the specific application or data, and the source; it also identifies any workload details the source does not provide.",
+    "context": "A customer example does not establish that the organization uses the product for every application. Keep unsupported inferences separate from what the primary source actually states."
+  }, '14',{kind:'activity',minutes:5});
 
   scene('Related tables',['Entities','Relationships','Rules'],(d,s)=>{
     title(d,'Related tables');employeeTable(d,'employees',65,230);
     table(d,'states',805,230,[150,240],[['state_code','home_state'],...STATES],{rowHeight:58,fontSize:27});
     if(s>=1)d.arrow('relationship',600,317,785,317,P.green,4);
     if(s===2)text(d,'constraint',640,510,'Declared constraints protect relationships',31,P.green);
-  },'Relational databases organize data into tables with rows and columns. Primary keys identify rows; foreign keys can enforce relationships; SQL joins combine related data for a query. Constraints express rules such as required values, uniqueness, and valid references. Transaction behavior belongs to the engine and its configuration, so say “MySQL with InnoDB” for the transactional examples rather than implying every possible storage engine has identical guarantees. Ask which table owns the spelling of Michigan and why a reference avoids copying that spelling into every assignment.', '15–16',{activity:'keys',minutes:2});
+  },{
+    "idea": "Related tables give each kind of fact a clear home while keys connect the records.",
+    "builds": [
+      "Read employee 1 as Alice with state_code 26, then read state 26 as Michigan. Point out that the employee table stores the person’s state code while the state table stores the state’s name.",
+      "Follow the arrow between the tables and point to the matching 26 values. Explain that the shared code lets us connect the employee to the state without copying Michigan into every employee row.",
+      "Read Declared constraints protect relationships. Ask what should happen if an employee names a state code that the state table does not contain."
+    ],
+    "question": "If Michigan’s stored name needs correcting, which table should own that correction?",
+    "answer": "The state table should own the state name, so one correction serves every employee who references its code.",
+    "context": "Primary keys identify rows, foreign keys can enforce references, and joins combine data for a query. The transaction examples assume MySQL with InnoDB; guarantees depend on the database engine and configuration."
+  }, '15–16',{activity:'keys',minutes:2});
 
   scene('Schema',['Field definitions','Different records','Constraints'],(d,s)=>{
     table(d,'schema',110,245,[290,240,470],[['field','type','example'],['name','text',s===0?'Michael Jordan':'Adele Adkins'],['birth_year','integer',s===0?'1963':'1988'],['retired','boolean','true / false']],{rowHeight:60,fontSize:29});
     if(s===2)text(d,'required',640,510,'name: required',31,P.green);
-  },'The source uses famous-person records to distinguish a shared structure from the values of individual records. Country and realm are additional text fields in that example, with name and realm required. Here the boolean column shows allowed value forms rather than making a current claim about anyone’s retirement. A schema description includes fields, types, relationships, and constraints. It is distinct from the current records. Database products also use “schema” as an object namespace; MySQL commonly treats SCHEMA and DATABASE as synonyms. That product terminology does not change the structure-versus-values lesson.', '17–18',{kind:'definition',term:'Schema',definition:'The defined structure, types, relationships, and constraints of data.',minutes:2,sources:[MYSQL+'create-database.html']});
+  },{
+    "idea": "A schema describes the structure and rules that many different records share.",
+    "builds": [
+      "Read across field, type, and example. Use name as text and birth_year as an integer to separate the definition of a column from the particular value stored in one record.",
+      "Point to Adele Adkins and 1988 replacing the earlier example values. Ask what stayed the same: the field names and types still describe the record.",
+      "Point to name: required. Explain that a schema can require a value as well as assign its type; this is a rule the database can check when data is written."
+    ],
+    "question": "When the example changes from Michael Jordan to Adele Adkins, which parts are data and which parts are schema?",
+    "answer": "The names and birth years are data. The column names, their types, and the required-name rule are schema.",
+    "context": "The boolean example shows true and false as possible forms rather than asserting anyone’s current retirement status. The fuller example also includes country and realm. Products use schema as a namespace term too; MySQL commonly treats SCHEMA and DATABASE as synonyms."
+  }, '17–18',{kind:'definition',term:'Schema',definition:'The defined structure, types, relationships, and constraints of data.',minutes:2,sources:[MYSQL+'create-database.html']});
 
   scene('Tables and views',['Stored rows','A saved query','A derived result'],(d,s)=>{
     title(d,'Tables and views');employeeTable(d,'base',75,220);
     if(s>=1){d.arrow('view-edge',620,322,760,322,P.green,4);box(d,'view',785,240,350,95,'View',true,P.green,35);}
     if(s===2)table(d,'result',795,365,[130,200],[['id','name'],['1','Alice']],{rowHeight:58,fontSize:30});
     if(s>=1)text(d,'query',915,185,'state_code = 26',28,P.muted);
-  },'A base table stores rows. An ordinary view stores a query definition and presents that query’s result as a table-like interface. The source image shows several employee tables and two views; this simpler example filters one table. A view is not necessarily a stored snapshot or an automatic performance improvement. Materialized views are a separate feature in products that support them. Ask whether a normal view can reflect changed base data when queried again: yes, according to the query and transaction visibility. Do not confuse a view with a new independent copy of each row.', '19',{minutes:2,sources:[MYSQL+'create-view.html']});
+  },{
+    "idea": "An ordinary view exposes the result of a saved query over underlying data.",
+    "builds": [
+      "Point to the three stored employee rows and identify the one with state_code 26. Ask students to hold that row in mind as the result we want to expose.",
+      "Read state_code = 26 above View and follow the arrow from the base table. Explain that the view stores this query definition and presents its result through a table-like interface.",
+      "Read the result row, 1 and Alice, and connect it to the matching base row. Explain that querying the view again can produce a different result when the underlying data changes."
+    ],
+    "question": "If employee 1 moves to state 56, will this ordinary view necessarily keep showing that employee?",
+    "answer": "No. When the changed data is visible to the query, employee 1 no longer meets state_code = 26 and drops out of the result.",
+    "context": "Transaction visibility still applies when a view is queried. An ordinary view is not an independent snapshot or an automatic speed improvement; a materialized view is a separate feature where supported."
+  }, '19',{minutes:2,sources:[MYSQL+'create-view.html']});
 
   scene('Objects and rows',['An object graph','Relational rows','A mapping layer'],(d,s)=>{
     title(d,'Objects and rows');box(d,'object',80,215,300,90,'Employee object',true,P.blue,31);box(d,'jobs',95,395,270,65,'jobs: [...]',true,P.blue,30);d.arrow('object-link',230,320,230,380,P.blue,3);
     table(d,'row',865,230,[125,180],[['id','name'],['1','Alice']],{rowHeight:64,fontSize:30});
     if(s>=1)d.arrow('mapping',395,275,835,295,P.green,4);
     if(s===2)box(d,'orm',485,360,270,80,'ORM',true,P.green,34);
-  },'Object-oriented programs represent references, collections, behavior, and sometimes inheritance. Relational tables represent rows, columns, keys, and relations. Mapping between these models requires decisions about identity, relationships, loading, and updates. This is the source’s “impedance mismatch.” An object-relational mapper can perform much of that translation, but does not eliminate the underlying database design or query costs. The source later names SQLAlchemy, Django ORM, and Peewee. Nonrelational products can also require mapping; avoid the source’s blanket claim that all NoSQL has no mismatch.', '20, 38',{minutes:2,sources:['https://docs.sqlalchemy.org/en/20/orm/quickstart.html']});
+  },{
+    "idea": "Programs and relational databases represent related information differently, so data must be mapped between them.",
+    "builds": [
+      "Point to Employee object and its jobs list, then to the row containing 1 and Alice. Explain that an object can hold references and collections while a row contains values in declared columns.",
+      "Follow the mapping arrow from the object toward the table. Ask where the jobs collection would go and how the program could reconnect those rows to this employee.",
+      "Point to ORM and expand the name: object-relational mapper. Say that it helps translate between objects and database operations, but we still need to understand the tables, relationships, and queries it uses."
+    ],
+    "question": "What does an ORM still need to know to store an employee’s jobs?",
+    "answer": "It needs the table structure, identifiers, and relationship rules that connect the employee to the job or assignment rows.",
+    "context": "This mapping difficulty is often called impedance mismatch. SQLAlchemy, Django ORM, and Peewee are examples of mapping tools. Nonrelational databases can also require mapping, and an ORM does not remove query costs or database-design decisions."
+  }, '20, 38',{minutes:2,sources:['https://docs.sqlalchemy.org/en/20/orm/quickstart.html']});
 
   scene('Primary key',['A unique identifier','A repeated name','A rejected duplicate key'],(d,s)=>{
     table(d,'pk',200,245,[260,320,300],[['employee_id','name','state_code'],...EMPLOYEES],{rowHeight:62,fontSize:31,highlightCols:[0],highlightRows:s===1?[1,3]:[]});
     if(s===2)text(d,'reject',640,520,'Another employee_id = 1: reject',30,P.red);
-  },'The source’s item_id example uniquely identifies inventory rows. The same rule applies to this restaurant dataset: one primary key constraint identifies every employee row and prohibits NULL. A primary key may contain multiple columns. Other unique constraints may also exist. Choose a stable identifier; a name need not be unique. The source’s Alice with employee_id 1 and Alice with employee_id 3 are different employees, not duplicate records. The duplicate-key build proposes a new conflicting identifier and is rejected; it does not reject the repeated name.', '21',{kind:'definition',term:'Primary key',definition:'A column or column combination that uniquely identifies every row and cannot contain NULL.',activity:'keys',minutes:3,sources:[MYSQL+'create-table.html']});
+  },{
+    "idea": "A primary key identifies a row even when other values, such as names, repeat.",
+    "builds": [
+      "Read the definition and point down the highlighted employee_id column: 1, 2, and 3. Each value identifies one employee row, and none is NULL.",
+      "Point to the two highlighted Alice rows and read their identifiers aloud. Explain that employee 1 and employee 3 are different people whose names happen to match.",
+      "Point to Another employee_id = 1: reject. Ask students to distinguish proposing a duplicate key from storing another person named Alice."
+    ],
+    "question": "Could a new employee be named Alice without violating this primary key?",
+    "answer": "Yes, provided the new employee has a different non-NULL employee_id and satisfies the table’s other constraints.",
+    "context": "A table has one primary key constraint, which can contain several columns, and may have other unique constraints. Prefer stable identifiers. The same rule identifies inventory rows by item_id in the keys activity."
+  }, '21',{kind:'definition',term:'Primary key',definition:'A column or column combination that uniquely identifies every row and cannot contain NULL.',activity:'keys',minutes:3,sources:[MYSQL+'create-table.html']});
 
   scene('Foreign key',['A referenced row','A valid child','An invalid reference'],(d,s)=>{
     title(d,'Foreign key');employeeTable(d,'employees',70,225,s===2?[['1','Alice','99']]:[EMPLOYEES[0]]);
     table(d,'states',800,225,[150,250],[['state_code','home_state'],...STATES],{rowHeight:60,fontSize:28,highlightRows:s===2?[]:[1]});
     d.arrow('reference',605,315,780,315,s===2?P.red:P.green,4);
     if(s>=1)text(d,'outcome',640,455,s===2?'No state 99: reject':'State 26 exists: accept',33,s===2?P.red:P.green);
-  },'A foreign key links referencing columns to a declared referenced key. For this teaching schema, employees.state_code references the unique states.state_code. It can reject a non-NULL value such as 99 when no referenced row exists. A foreign key does not automatically prohibit NULL; add NOT NULL when a relationship is required. Deleting or changing a referenced row follows the configured referential action, such as restrict or cascade. The source’s Items diagram has analogous references to Item_Types and Makers. Follow arrow direction carefully: child values reference a parent key.', '22',{activity:'keys',minutes:3,sources:[MYSQL+'create-table-foreign-keys.html']});
+  },{
+    "idea": "A foreign key checks that a stored reference points to an allowed parent key.",
+    "builds": [
+      "Point to employee 1’s state_code 26 and then to state 26 in the lookup table. Follow the arrow from the employee’s reference to the state it names.",
+      "Read State 26 exists: accept. Explain that the referenced row satisfies this relationship check; the employee row still has to satisfy its other constraints.",
+      "Point to 99 replacing the employee’s state code and scan the state table for a match. Read No state 99: reject and explain that the database prevents an unsupported reference."
+    ],
+    "question": "Why does the reference to 99 fail while the reference to 26 succeeds?",
+    "answer": "The state table contains key 26 but contains no row with key 99.",
+    "context": "A foreign key alone can allow NULL; use NOT NULL when a reference is required. The teaching examples reference a primary or unique key. Changes to parent rows follow the configured action, such as restriction or cascading."
+  }, '22',{activity:'keys',minutes:3,sources:[MYSQL+'create-table-foreign-keys.html']});
 
   scene('Matching rows',['The tables','A matching value','Combined data'],(d,s)=>{
     title(d,'Matching rows');
     employeeTable(d,'employee',60,195,[EMPLOYEES[0]]);table(d,'state',815,195,[140,245],[['state_code','home_state'],STATES[0]],{rowHeight:58,fontSize:27});
     if(s>=1)d.arrow('match',595,282,795,282,P.green,4);
     if(s===2)table(d,'joined',360,395,[225,335],[['name','home_state'],['Alice','Michigan']],{rowHeight:57,fontSize:32});
-  },'Before teaching JOIN syntax, trace one matching pair. Alice 1 has state_code 26 and the states table maps 26 to Michigan. The query combines selected columns from matching rows. A foreign-key constraint can protect the relationship, but the JOIN operator itself does not require a declared foreign key. If several rows match a join condition, the result can contain several combinations. A relational join does not permanently glue the underlying tables together.', '16, 22',{activity:'keys',minutes:2,sources:[MYSQL+'join.html']});
+  },{
+    "idea": "A join produces combinations of rows whose values satisfy the match condition.",
+    "builds": [
+      "Read the employee row as Alice with state_code 26 and the state row as 26, Michigan. Ask which values tell us these records describe a related person and place.",
+      "Follow the arrow joining the two 26 values. Explain that the match condition compares those columns and identifies this pair of rows.",
+      "Read Alice and Michigan in the combined result. Point back to the original location of each value to show that the query selected columns from both matching rows."
+    ],
+    "question": "Where does each value in the Alice, Michigan result come from?",
+    "answer": "Alice comes from the employee row, and Michigan comes from the state row whose state_code matches that employee’s 26.",
+    "context": "A join does not require a declared foreign key and does not permanently merge its input tables. Several matching rows can produce several result combinations; the condition and the data determine the result."
+  }, '16, 22',{activity:'keys',minutes:2,sources:[MYSQL+'join.html']});
 
   exercise('keys','Keys & joins',3,
     ['Try an orphan with the foreign key on, then off.','Compare INNER JOIN and LEFT JOIN.'],
     'Which join keeps the orphan?','21–22',
-    'Choose Orphan maker and try INSERT with enforcement enabled: the model rejects it. Disable enforcement and try again, then compare the join types. LEFT JOIN keeps the item with NULL maker fields; INNER JOIN omits the unmatched item. Return to the lecture to connect database rules with transaction boundaries.');
+    {
+    "idea": "A constraint controls what data may be stored, while a join controls which stored rows appear in a result.",
+    "builds": [
+      "Open the green ↗ toolbar link to Keys & joins and reset the activity if it was used earlier. Give students three minutes to choose Orphan maker, try INSERT with foreign-key enforcement on, then turn enforcement off, try again, and compare INNER JOIN with LEFT JOIN. Return to the slide and ask: Which join keeps the orphan, and what appears in its maker fields?"
+    ],
+    "question": "Which join keeps the orphan item, and what appears in its maker fields?",
+    "answer": "LEFT JOIN keeps the orphan item and shows NULL for the missing maker fields; INNER JOIN omits that unmatched item.",
+    "context": "With enforcement enabled, the model rejects the orphan insert. Disabling it is a classroom comparison of invalid stored data, not a recommendation for production constraints. The next section considers how related writes can share one transaction."
+  });
 
   scene('A transaction',['Before','Pending changes','Commit','Alternative: rollback'],(d,s)=>{
     title(d,'A transaction');const values=(s===1||s===2)?[90,60]:[100,50];
     box(d,'account-a',150,225,360,170,'Account A',true,P.blue,34);box(d,'account-b',770,225,360,170,'Account B',true,P.green,34);
     text(d,'amount-a',330,355,values[0],44,P.blue);text(d,'amount-b',950,355,values[1],44,P.green);d.arrow('transfer',530,300,750,300,P.orange,4);
     text(d,'state',640,480,['Before transfer','Both changes pending','COMMIT','Alternative: ROLLBACK'][s],35,s===3?P.orange:P.green);
-  },'This illustrative transfer moves ten units from A to B. Treat the debit and credit as one transaction: either both take effect or neither does. The pending build shows both proposed changes, followed by commit. The final build is an alternative failure outcome, rolling back instead of committing; it is not a rollback of an already committed transfer. A transaction groups related statements and is not a guarantee that the business logic is correct. Use the activity to choose a success or failure path before revealing the result.', '23',{activity:'transactions',minutes:3,sources:[MYSQL+'commit.html']});
+  },{
+    "idea": "A transaction gives related changes one commit-or-rollback outcome.",
+    "builds": [
+      "Point to A with 100 and B with 50. Ask students to track a transfer of ten units while checking that the combined balance stays 150.",
+      "Read the pending balances, 90 and 60, and emphasize Both changes pending. Both proposed changes belong to one unit of work, but they have not yet been committed.",
+      "Point to COMMIT and read the same 90 and 60 balances. Explain that the complete transfer now becomes the committed result.",
+      "Read Alternative: ROLLBACK before discussing the restored 100 and 50. Explain that this is the other outcome from the pending stage, abandoning the transfer instead of committing it."
+    ],
+    "question": "If the transfer is abandoned before commit, what balances should remain?",
+    "answer": "A should remain at 100 and B at 50; neither half of the transfer should become a committed change.",
+    "context": "The rollback build is an alternative branch, not an undo of the commit shown immediately before it. Transactions group statements; correct business logic and appropriate constraints are still required."
+  }, '23',{activity:'transactions',minutes:3,sources:[MYSQL+'commit.html']});
 
   scene('ACID properties',['Atomicity','Consistency','Isolation','Durability'],(d,s)=>{
     title(d,'ACID properties');const terms=['Atomicity','Consistency','Isolation','Durability'];text(d,'term',640,220,terms[s],50,P.green);
     const labels=[['All changes','or none'],['Declared rules','remain satisfied'],['Concurrent work','controlled visibility'],['Committed result','survives failures']][s];
     box(d,'left',170,345,400,95,labels[0],true,P.blue,32);box(d,'right',710,345,400,95,labels[1],true,P.green,32);d.arrow('property',590,392,690,392,P.green,4);
-  },'Atomicity groups all changes into one outcome. Consistency means transactions preserve declared invariants when the transaction logic and constraints enforce them; the database does not know every real-world rule automatically. Isolation controls how concurrent transactions observe and affect one another, with different guarantees at different isolation levels. Durability means committed changes persist under the system’s stated failure model and durability configuration. The source mentions money, clinical records, inventory, and regulated records as examples where correctness matters. Do not translate ACID into “no possible interference or data loss under every event.”', '23',{activity:'transactions',minutes:3,sources:['https://dev.mysql.com/doc/refman/8.0/en/mysql-acid.html',MYSQL+'innodb-transaction-isolation-levels.html']});
+  },{
+    "idea": "ACID names distinct guarantees about completing, validating, coordinating, and preserving transactions.",
+    "builds": [
+      "Read Atomicity and All changes or none. Connect it to the transfer: the debit and credit must share one outcome rather than leaving half a transfer committed.",
+      "Read Consistency and Declared rules remain satisfied. Ask which rules the transfer needs, such as preserving the total and preventing a balance from going below its allowed limit.",
+      "Read Isolation and point from Concurrent work to controlled visibility. Explain that an isolation level determines what another transaction may observe while this work is in progress.",
+      "Read Durability and connect Committed result to survives failures. Explain that a committed change must persist under the database’s configured durability guarantees and supported failure model."
+    ],
+    "question": "Which ACID property concerns what another transaction can see during an unfinished transfer?",
+    "answer": "Isolation governs that transaction’s visibility and interaction with the unfinished work.",
+    "context": "The database cannot infer every business rule; application logic and declared constraints must express them. Isolation levels differ, and durability depends on configuration and the failure model. Financial, clinical, inventory, and regulated records all motivate careful correctness requirements."
+  }, '23',{activity:'transactions',minutes:3,sources:['https://dev.mysql.com/doc/refman/8.0/en/mysql-acid.html',MYSQL+'innodb-transaction-isolation-levels.html']});
 
   exercise('transactions','Transactions',3,
     ['Enable credit failure. Begin, debit, then credit.'],
     'Why do committed balances stay unchanged?','23',
-    'Enable the simulated credit failure before BEGIN. Students should see the pending debit only in the private view. The failed credit causes this application model to roll back the entire transfer, preserving both committed balances. An arbitrary SQL error does not necessarily roll back the whole transaction by itself. Resume with how table design prevents inconsistent repeated facts.');
+    {
+    "idea": "A failed transfer must discard its private changes before they become committed balances.",
+    "builds": [
+      "Open the green ↗ toolbar link to Transactions and reset the activity if it was used earlier. Give students three minutes to enable credit failure before BEGIN, then begin, debit, and attempt the credit while comparing the private and committed balances. Return to the slide and ask: Why do the committed balances stay unchanged?"
+    ],
+    "question": "Why do the committed balances stay unchanged after the credit fails?",
+    "answer": "The debit was still private, and this application model rolls back the whole transfer when the credit fails, so neither change commits.",
+    "context": "The model makes rollback an application response to the failed credit. An arbitrary SQL error does not necessarily roll back an entire transaction automatically. Next, connect transaction safety to table designs that avoid repeating inconsistent facts."
+  });
 
   scene('Normalization',['Repeated facts','Dependencies','Separate responsibilities'],(d,s)=>{
     flow(d,['1NF','2NF','3NF'],s,300);text(d,'rule',640,470,['One value per cell','Depend on the whole key','Separate transitive dependencies'][s],34,P.green);
-  },'Normalization uses functional dependencies to organize relational tables and reduce avoidable repetition and modification anomalies. Introduce the first three normal forms as a sequence applied to the restaurant example. The shorthand on the slide is introductory: formal definitions consider candidate keys and non-prime attributes, not only whichever key was chosen as primary. Higher normal forms exist and can matter, so 3NF is not a universal ceiling. Atomicity here concerns the chosen data domain, not whether a string can be split into characters.', '24–25',{kind:'definition',term:'Normalization',definition:'Organizing tables around dependencies to reduce repeated facts and modification anomalies.',activity:'normalization',minutes:2});
+  },{
+    "idea": "Normalization separates facts according to what determines them.",
+    "builds": [
+      "Point to 1NF and read ‘One value per cell.’ For our restaurant, each assignment needs one job value rather than a list of jobs.",
+      "Point to 2NF and read ‘Depend on the whole key.’ A fact about an employee alone should not be repeated in every employee-and-job assignment.",
+      "Point to 3NF and read ‘Separate transitive dependencies.’ When a state code determines a state name, keep that mapping in its own table."
+    ],
+    "question": "What tells us which facts should move into separate tables?",
+    "answer": "Their functional dependencies: which identifiers determine each fact.",
+    "context": "These labels are introductory shorthand. Formal definitions consider candidate keys and non-prime attributes; adding a surrogate primary key does not erase those dependencies. Atomic values depend on the chosen domain, and normal forms beyond 3NF also exist."
+  }, '24–25',{kind:'definition',term:'Normalization',definition:'Organizing tables around dependencies to reduce repeated facts and modification anomalies.',activity:'normalization',minutes:2});
 
   scene('Restaurant assignments',['Several jobs in one cell','One employee, several assignments'],(d,s)=>{
     title(d,'Restaurant assignments');
     if(!s)table(d,'lists',155,215,[220,200,550],[['employee_id','name','jobs'],['1','Alice','Chef, Waiter'],['2','Bob','Waiter, Bartender'],['3','Alice','Chef']],{rowHeight:66,fontSize:30,highlightCols:[2]});
     else{table(d,'one',165,210,[230,260],[['employee_id','name'],['1','Alice']],{rowHeight:65,fontSize:31});table(d,'many',810,210,[270],[['job'],['Chef'],['Waiter']],{rowHeight:65,fontSize:31});d.arrow('assign',675,280,790,280,P.green,4);}
-  },'Read the source restaurant dataset. Employee 1 is Alice in Michigan with Chef and Waiter assignments. Employee 2 is Bob in Wyoming with Waiter and Bartender assignments. Employee 3 is a different Alice in Wyoming with a Chef assignment. A comma-separated job list makes individual assignments harder to constrain and query. The source’s unnormalized row associates only one job_code with a multi-job field; this adaptation omits that misleading single code until each assignment has its own row. Ask how to identify an employee without assuming names are unique.', '26',{activity:'normalization',minutes:2});
+  },{
+    "idea": "One employee can have several job assignments, even when employees share a name.",
+    "builds": [
+      "Read the three rows: employee 1 has Chef and Waiter, employee 2 has Waiter and Bartender, and employee 3 has Chef. Point to the two Alices and ask whether a name identifies one employee.",
+      "Point to employee 1 on the left and follow the arrow to Chef and Waiter on the right. These are two assignments for the same person, so each assignment needs its own row."
+    ],
+    "question": "How can we distinguish the two employees named Alice?",
+    "answer": "Use employee_id: Alice 1 and Alice 3 are different people.",
+    "context": "Employee 1 lives in Michigan; employees 2 and 3 live in Wyoming. A comma-separated job list makes individual assignments harder to query and constrain."
+  }, '26',{activity:'normalization',minutes:2});
 
   scene('First normal form',['Separate assignment rows','A composite key'],(d,s)=>{
     title(d,'First normal form');table(d,'restaurant',65,170,[190,130,155,175,160,205],[['employee_id','name','job_code','job','state_code','home_state'],...RESTAURANT],{rowHeight:54,fontSize:26,highlightCols:s?[0,2]:[]});
     if(s)text(d,'key',640,515,'Key: (employee_id, job_code)',29,P.green);
-  },'Now each row represents one employee/job assignment with one value per field. The composite key (employee_id, job_code) identifies that assignment. employee_id alone repeats when one employee has multiple jobs; job_code alone repeats when multiple employees share a job. A surrogate row id could identify rows too, but it would not make the underlying partial dependencies disappear. The full five assignment rows preserve the original data, including the distinct employees named Alice. This is the first-normal-form starting table for the next steps.', '26',{activity:'normalization',minutes:3});
+  },{
+    "idea": "In this 1NF table, each row represents one employee’s assignment to one job.",
+    "builds": [
+      "Point to employee 1’s first two rows: J01 is Chef and J02 is Waiter. Count five assignments, with one job in each row.",
+      "Point to the highlighted employee_id and job_code columns. Neither column is unique alone, but the pair identifies one assignment."
+    ],
+    "question": "Why is employee_id alone insufficient as the assignment key?",
+    "answer": "An employee can have multiple jobs, so the same employee_id appears in more than one assignment row.",
+    "context": "The composite key is (employee_id, job_code), and the two Alices retain their distinct employee IDs. Adding a separate row ID would not remove the partial dependencies in this table."
+  }, '26',{activity:'normalization',minutes:3});
 
   scene('An update anomaly',['Repeated employee facts','Only one row updated','One inconsistent person'],(d,s)=>{
     title(d,'An update anomaly');const rows=RESTAURANT.filter(r=>r[0]==='1').map(r=>[r[0],r[2],r[4],r[5]]);if(s>=1)rows[0]=['1','J01','56','Wyoming'];
     table(d,'move',140,220,[245,235,245,275],[['employee_id','job_code','state_code','home_state'],...rows],{rowHeight:78,fontSize:31,highlightRows:s?[1]:[]});
     if(s===2)text(d,'problem',640,505,'Employee 1 now has two home states',31,P.red);
-  },'Ask what must change when Alice with employee_id 1 moves from Michigan to Wyoming. Both assignment rows carrying her home state must change. Updating only the Chef row leaves contradictory facts about the same employee. Alice with employee_id 3 is a different person and should not be updated just because her name matches. The source asks “if Alice moves”; the identifier makes the intended person unambiguous. A transaction could update both rows together, but a better dependency structure avoids storing the same employee fact repeatedly.', '27',{activity:'normalization',minutes:3});
+  },{
+    "idea": "Repeating an employee’s home state allows different rows to disagree about that person.",
+    "builds": [
+      "Point to employee 1’s two rows, both showing state 26, Michigan. Ask how many rows must change when this employee moves to Wyoming.",
+      "Point to the changed J01 row: it now shows 56, Wyoming. Read the J02 row below it, which still says 26, Michigan.",
+      "Read ‘Employee 1 now has two home states.’ Explain that one intended change became inconsistent because one stored copy was missed."
+    ],
+    "question": "Which row was missed when employee 1 moved?",
+    "answer": "The J02 assignment row still stores Michigan, so both assignment rows must be updated in this design.",
+    "context": "Alice with employee_id 3 is another person and must not change just because the names match. A transaction can group the two updates, while normalization avoids repeating the employee fact in the first place."
+  }, '27',{activity:'normalization',minutes:3});
 
   scene('Partial dependencies',['The assignment key','Employee facts','Job facts'],(d,s)=>{
     title(d,'Partial dependencies');box(d,'emp-key',100,205,390,80,'employee_id',true,P.blue,34);box(d,'job-key',790,205,390,80,'job_code',true,P.green,34);
     text(d,'composite',640,160,'(employee_id, job_code)',30,P.muted);
     if(s>=1){d.arrow('emp-dep',295,300,295,365,P.blue,4);box(d,'emp-facts',100,380,390,85,'name, state_code, home_state',true,P.blue,25);}
     if(s===2){d.arrow('job-dep',985,300,985,365,P.green,4);box(d,'job-facts',790,380,390,85,'job',true,P.green,34);}
-  },'State the domain assumptions explicitly: employee_id determines the employee’s name and home state; job_code determines the job title. These non-key facts depend on only part of the assignment table’s composite key. Second normal form removes those partial dependencies. Merely adding an arbitrary unique id to the original wide table does not repair the meaningful candidate-key dependencies. Ask which facts depend on the assignment itself rather than the employee or job. A future assignment-specific value, such as its start date under an appropriate key, belongs with the assignment.', '25, 28',{activity:'normalization',minutes:3});
+  },{
+    "idea": "A partial dependency occurs when a non-key fact needs only part of a composite key.",
+    "builds": [
+      "Read the assignment key, (employee_id, job_code). Point to its two parts and ask which facts describe the employee and which describe the job.",
+      "Follow the blue arrow from employee_id to name, state_code, and home_state. Those employee facts do not need job_code to determine their values.",
+      "Follow the green arrow from job_code to job. The job title does not need employee_id, so both groups of facts depend on only part of the assignment key."
+    ],
+    "question": "Which part of the composite key determines the title Chef?",
+    "answer": "job_code alone: J01 determines Chef, regardless of the employee assigned to it.",
+    "context": "The example assumes one name and home state per employee_id and one title per job_code. 2NF removes partial dependencies of non-prime attributes on candidate keys; adding an arbitrary row ID does not repair them."
+  }, '25, 28',{activity:'normalization',minutes:3});
 
   scene('Second normal form',['Employee facts','Job facts','Assignments remain'],(d,s)=>{
     title(d,'Second normal form');
@@ -204,76 +455,208 @@
     if(s===1){text(d,'job-label',955,170,'Jobs',30,P.green);table(d,'jobs',775,220,[160,215],[['job_code','job'],...JOBS],{rowHeight:62,fontSize:29});}
     if(s===2){text(d,'assignment-label',955,170,'Assignments',30,P.green);table(d,'assignments',775,220,[200,175],[['employee_id','job_code'],...ASSIGNMENTS],{rowHeight:45,fontSize:27});}
     if(!s)text(d,'fact',930,330,'One row per employee',30,P.green);
-  },'The three tables are Employees, Jobs, and Assignments. Builds reveal Jobs and then Assignments beside Employees to keep all labels readable. Employees has one row per employee_id, Jobs one row per job_code, and Assignments retains the composite key (employee_id, job_code) with foreign keys to both tables. Reconstruct all five original assignments using these references. Employee facts and job titles no longer repeat per assignment. Employees still stores state_code and home_state together; that remaining dependency motivates the third-normal-form step.', '28',{activity:'normalization',minutes:3});
+  },{
+    "idea": "Separate employee facts and job facts, then retain their connections as assignments.",
+    "builds": [
+      "Point to Employees and count three rows. Each employee’s name and home state are now stored once, including separate rows for Alice 1 and Alice 3.",
+      "Point to Jobs on the right and read J01 → Chef, J02 → Waiter, and J03 → Bartender. Each title is stored once for its job code.",
+      "Point to Assignments, now shown on the right, and count five pairs. These employee_id and job_code references preserve every original assignment without repeating employee names or job titles."
+    ],
+    "question": "Where would you look to find both jobs held by employee 1?",
+    "answer": "Find employee 1’s J01 and J02 rows in Assignments, then look up those codes in Jobs.",
+    "context": "Jobs remains part of the design when the display switches to Assignments. Assignments has the composite key (employee_id, job_code) and foreign keys to both tables. Employees still contains the state_code-to-home_state dependency."
+  }, '28',{activity:'normalization',minutes:3});
 
   scene('A transitive dependency',['Employee to state code','State code to state name'],(d,s)=>{
     title(d,'A transitive dependency');flow(d,['employee_id','state_code','home_state'],s?2:0,260);
     text(d,'id',305,425,'1',36,P.blue);text(d,'code',640,425,'26',36,P.green);text(d,'state',975,425,'Michigan',36,P.green);
-  },'Under this example’s domain rules, each employee has one home state and each state_code identifies a home_state name. The state name therefore depends on employee_id through state_code. Multiple employees can share a state, so correcting the state name in every employee row would repeat work and risk disagreement. Source slide 28 says the name and code determine one another; the decomposition only needs the stated unique state_code-to-name rule. Do not assume arbitrary real-world names are globally unique identifiers.', '28–29',{activity:'normalization',minutes:2});
+  },{
+    "idea": "The employee’s state name is determined through the employee’s state code.",
+    "builds": [
+      "Point from employee_id 1 to state_code 26. Under this example’s rules, choosing the employee determines one home-state code.",
+      "Continue from state_code 26 to Michigan. The code determines the name, so employee_id reaches home_state through another non-key attribute."
+    ],
+    "question": "If several employees have state_code 26, how many copies of Michigan would their employee rows store?",
+    "answer": "One copy per employee row, even though all those names describe the same state code.",
+    "context": "The stated rule is state_code → home_state. It does not require treating arbitrary names as globally unique identifiers. This transitive dependency motivates a separate States table."
+  }, '28–29',{activity:'normalization',minutes:2});
 
   scene('Third normal form',['A state lookup','Employee references','One state-name update'],(d,s)=>{
     title(d,'Third normal form');employeeTable(d,'employees',55,235);
     table(d,'states',785,235,[175,260],[['state_code','home_state'],...STATES],{rowHeight:58,fontSize:29,highlightRows:s===2?[1]:[]});
     if(s>=1)d.arrow('lookup',590,322,765,322,P.green,4);
     if(s===2)text(d,'update',640,510,'State names live in one table',32,P.green);
-  },'Move the state-code/name mapping to States and keep employees.state_code as a foreign key. Jobs and Assignments from the previous step remain part of the design, yielding four tables overall. Employee 1 maps to Michigan; employee 2 and the distinct employee 3 map to Wyoming. A state-name correction happens in the lookup table rather than every employee or assignment row. This example reaches 3NF under its stated candidate keys and dependencies. Normalization does not remove every repeated value: foreign-key values intentionally repeat to represent relationships.', '29',{activity:'normalization',minutes:3});
+  },{
+    "idea": "Store state names in States and let employee rows refer to them by state code.",
+    "builds": [
+      "Point to the state table on the right: 26 maps to Michigan and 56 maps to Wyoming. The employee table now stores state codes without repeating state names.",
+      "Follow the arrow from employee 1’s state_code 26 to the matching state row. Employees 2 and 3 both refer to 56, but they remain separate employees.",
+      "Point to the highlighted Michigan row and read ‘State names live in one table.’ A correction to that state’s name would require one stored-row change."
+    ],
+    "question": "Does reaching 3NF mean state_code 56 can appear only once in Employees?",
+    "answer": "No. Several employees can reference the same state; the state’s descriptive name is stored once in States.",
+    "context": "Jobs and Assignments remain, giving four tables overall. The design reaches 3NF under the example’s stated keys and dependencies. Repeated foreign-key values intentionally represent relationships."
+  }, '29',{activity:'normalization',minutes:3});
 
   exercise('normalization','Normalization',4,
     ['In 1NF, update one Alice #1 row.','Repeat the move in 3NF.'],
     'Why is Alice #3 unchanged?','26–29',
-    'In 1NF, update only one assignment row for employee 1 to expose contradictory home states. Switching normal forms resets the move; in 3NF, update employee 1 once and inspect the joined facts. Alice #3 has a different employee_id and is a different person. Ask which repeated employee facts disappeared before returning to normalization tradeoffs.');
+    {
+    "idea": "Compare how many stored facts must change when the same employee moves in two designs.",
+    "builds": [
+      "Point to the green ↗ link and give students 4 minutes; reset the activity if it was used earlier. Ask them to update one Alice #1 assignment row in 1NF, switch to 3NF, and repeat the move. Return to the slides and ask why Alice #3 is unchanged."
+    ],
+    "question": "Why is Alice #3 unchanged when you move Alice #1?",
+    "answer": "They have different employee IDs, and the update targets employee_id 1. In 3NF, one employee-row change supplies the new state to both of that employee’s joined assignments.",
+    "context": "Switching normal forms resets the move. In 1NF, changing only one assignment row creates contradictory home states; in 3NF, the employee’s state code is stored once."
+  });
 
   scene('Normalization tradeoffs',['Fewer repeated facts','Read workload','Measured denormalization'],(d,s)=>{
     title(d,'Normalization tradeoffs');
     const labels=[['Separate facts','Safer updates'],['Related tables','Joins at query time'],['Stored summary','Refresh responsibility']][s];flow(d,labels,0,255);
     text(d,'measure',640,450,s===2?'Measure queries and define consistency rules':'Integrity and performance require different checks',31,P.orange);
-  },'Normalization reduces unnecessary repetition and insertion, update, and deletion anomalies. Correct source slide 30: it does not guarantee faster queries. Join costs, indexes, data size, caching, and query patterns matter. Deliberate denormalization can help a measured read workload, but someone must maintain consistency between redundant representations. The source contrasts transactional OLTP and analytical OLAP; treat that as a useful workload distinction rather than an absolute rule that every operational schema or warehouse must use one design. Higher normal forms can be appropriate when additional dependencies exist.', '30–31',{minutes:2,sources:['https://learn.microsoft.com/en-us/sql/relational-databases/performance/joins?view=sql-server-ver16']});
+  },{
+    "idea": "Normalization reduces update risks, while query speed must be measured for the workload.",
+    "builds": [
+      "Point from Separate facts to Safer updates. Connect this to Alice’s move: fewer stored copies mean fewer opportunities for inconsistent changes.",
+      "Point from Related tables to Joins at query time. We can reconstruct the combined view, but its cost depends on the query, indexes, and data.",
+      "Point from Stored summary to Refresh responsibility. A summary may speed up repeated reads, but someone must keep it consistent when the underlying facts change."
+    ],
+    "question": "What responsibility comes with storing a redundant summary to speed up reads?",
+    "answer": "Define and maintain a refresh process so the summary stays consistent with the underlying data.",
+    "context": "Normalization does not guarantee faster queries. Measure joins, indexes, caching, and workload before denormalizing. OLTP and OLAP describe useful workload tendencies, not universal rules for schema design."
+  }, '30–31',{minutes:2,sources:['https://learn.microsoft.com/en-us/sql/relational-databases/performance/joins?view=sql-server-ver16']});
 
   scene('Structured Query Language',['A requested result','An execution plan'],(d,s)=>{
     code(d,'query',['SELECT name FROM employees','WHERE state_code = 26;'],100,245,36,60);
     if(s){box(d,'plan',420,400,440,90,'DBMS chooses a plan',true,P.green,32);}
-  },'SQL expresses operations on data and definitions of database objects. A SELECT states the desired result, while the DBMS determines an execution plan. The source shows command-line tools, SQL scripts, and Python reaching databases managed by MySQL. SQL has a shared foundation, but products differ in dialect, types, functions, and administration commands. The examples in this lecture target MySQL. Writing a declarative query does not mean performance is automatic; schema, indexes, statistics, and the exact query still matter.', '32–33',{kind:'definition',term:'SQL',definition:'A language for defining database objects and querying or modifying relational data.',activity:'queries',minutes:2});
+  },{
+    "idea": "SQL describes the requested data operation, and the DBMS chooses how to execute it.",
+    "builds": [
+      "Read the query aloud: return names from employees whose state_code is 26. Point to SELECT for the requested field and WHERE for the condition.",
+      "Point to ‘DBMS chooses a plan.’ The query states the result we want; the database chooses an execution strategy for producing it."
+    ],
+    "question": "Does this SELECT specify which disk pages to read first?",
+    "answer": "No. It specifies the desired rows and field; the DBMS chooses an execution plan.",
+    "context": "The projected examples use MySQL, while the browser sandbox uses SQLite. SQL dialects differ in types, functions, and administration commands. Declarative SQL still needs suitable schemas, indexes, and queries for good performance."
+  }, '32–33',{kind:'definition',term:'SQL',definition:'A language for defining database objects and querying or modifying relational data.',activity:'queries',minutes:2});
 
   scene('A database for the examples',['Create','Select'],(d,s)=>{
     title(d,'A database for the examples');code(d,'database',['CREATE DATABASE restaurant;','USE restaurant;'],100,225,39,90,s);
     if(s)text(d,'context',640,465,'Current database: restaurant',33,P.green);
-  },'CREATE DATABASE creates a named database, subject to permissions and whether the name already exists. USE changes the current database for the session so unqualified table names refer there. This corrects the visual ordering on source slide 34: create the database before selecting it and defining its tables. The semicolon terminates statements in common SQL client workflows; it is not a separate SQL operation. Use a disposable course database for demonstrations. Repeated execution of plain CREATE DATABASE may fail if the object already exists.', '34',{minutes:2,sources:[MYSQL+'create-database.html',MYSQL+'use.html']});
+  },{
+    "idea": "Create the named MySQL database before selecting it as the session’s current database.",
+    "builds": [
+      "Read the highlighted CREATE DATABASE restaurant statement. It creates the named database in which we will define the example tables.",
+      "Read USE restaurant and point to ‘Current database: restaurant.’ Unqualified table names in this session now refer to that database."
+    ],
+    "question": "What changes when the session executes USE restaurant?",
+    "answer": "restaurant becomes the current database for resolving unqualified table names; USE does not create it.",
+    "context": "These are MySQL commands, not SQLite sandbox commands. CREATE DATABASE requires permission and can fail if the name already exists. Use a disposable course database; semicolons delimit statements in common SQL clients."
+  }, '34',{minutes:2,sources:[MYSQL+'create-database.html',MYSQL+'use.html']});
 
   scene('A table definition',['Columns and types','The primary key'],(d,s)=>{
     title(d,'A table definition');code(d,'create',['CREATE TABLE employees (','    employee_id INT PRIMARY KEY,','    name VARCHAR(50) NOT NULL,','    state_code INT',');'],100,190,33,62,s?1:2);
-  },'The table definition declares integer employee identifiers, required names with a maximum character length, and a state_code. The source calls this last field state_id; this lecture consistently uses state_code to match the restaurant normalization tables. This short first table omits the foreign key so students can focus on column definitions; add it once States exists, as shown in the keys activity and companion. PRIMARY KEY supplies uniqueness and non-NULL requirements for employee_id. State codes here are numeric identifiers, not quantities to add.', '34',{activity:'keys',minutes:2,sources:[MYSQL+'create-table.html']});
+  },{
+    "idea": "CREATE TABLE declares columns, data types, and constraints for future rows.",
+    "builds": [
+      "Point to the name declaration: VARCHAR(50) permits text up to 50 characters, and NOT NULL requires a non-NULL value. Read the two INT columns as numeric identifiers.",
+      "Point to employee_id INT PRIMARY KEY. In this MySQL definition, the primary key requires a unique, non-NULL identifier for each employee."
+    ],
+    "question": "Does this definition make employee names unique?",
+    "answer": "No. The primary key is employee_id; the name column has no uniqueness constraint.",
+    "context": "This short definition does not yet declare state_code as a foreign key, and state_code permits NULL. NOT NULL alone does not reject an empty string. State codes are identifiers, not quantities to add."
+  }, '34',{activity:'keys',minutes:2,sources:[MYSQL+'create-table.html']});
 
   scene('INSERT creates rows',['Explicit columns','One record','A second employee'],(d,s)=>{
     title(d,'INSERT creates rows');code(d,'insert',['INSERT INTO employees','    (employee_id, name, state_code)',s===2?"VALUES (2, 'Bob', 56);":"VALUES (1, 'Alice', 26);"],90,185,34,61,s===0?1:2);
     if(s>=1)table(d,'created',370,405,[160,220,160],[['id','name','state'],s===2?EMPLOYEES[1]:EMPLOYEES[0]],{rowHeight:53,fontSize:30});
-  },'INSERT lists destination columns and corresponding values. Use straight single quotes for SQL text literals. The first inserted record is employee 1, Alice, state 26; the second is employee 2, Bob, state 56. Explicit column lists make the intended mapping easier to review and less dependent on table definition order. Duplicate keys, missing required values, or invalid foreign keys can reject an insert. The three-row sample used later also contains employee 3, the distinct Alice in state 56; insert that record when building the full teaching dataset.', '34',{activity:'queries',minutes:2,sources:[MYSQL+'insert.html']});
+  },{
+    "idea": "INSERT maps a list of values to an explicit list of destination columns.",
+    "builds": [
+      "Point to the column list and align it with VALUES: employee_id receives 1, name receives 'Alice', and state_code receives 26. The positions establish the mapping.",
+      "Point to the new row beneath the statement. Read its three stored values and connect each one back to the matching input value.",
+      "Read the changed VALUES clause: 2, 'Bob', 56. Point to Bob’s new row; this insert adds another employee rather than replacing Alice."
+    ],
+    "question": "Which column receives 56 in the second INSERT?",
+    "answer": "state_code, because it is third in the explicit column list and 56 is third in VALUES.",
+    "context": "Use straight single quotes for SQL text. Duplicate keys or violated constraints can reject an insert. Later examples use a complete three-row fixture that also includes employee 3, the distinct Alice in state 56."
+  }, '34',{activity:'queries',minutes:2,sources:[MYSQL+'insert.html']});
 
   scene('SELECT reads rows',['Source rows','Filter','Selected columns'],(d,s)=>{
     title(d,'SELECT reads rows');code(d,'select',["SELECT employee_id, name","FROM employees","WHERE name = 'Alice';"],80,160,32,45,s===0?1:s===1?2:0);
     table(d,'selection',300,340,[300,350],[['employee_id','name'],...(s===0?EMPLOYEES:EMPLOYEES.filter(r=>r[1]==='Alice')).map(r=>r.slice(0,2))],{rowHeight:51,fontSize:31,highlightRows:s===1?[1,2]:[]});
-  },'FROM supplies rows, WHERE tests a condition, and the SELECT list chooses output expressions. The diagram is a conceptual teaching order, not an assertion about the optimizer’s physical execution. Filtering name = Alice returns employee_ids 1 and 3 because both rows have that name. SELECT * retrieves every column, but selecting specific columns makes the interface clearer. A query without ORDER BY does not promise a particular result order. This scene shows a small illustrative ordering for readability.', '34',{activity:'queries',minutes:3,sources:[MYSQL+'select.html']});
+  },{
+    "idea": "SELECT chooses output fields from rows that satisfy a condition.",
+    "builds": [
+      "Point to the highlighted FROM employees line and read the three source rows. Both employee 1 and employee 3 have the name Alice.",
+      "Point to WHERE name = 'Alice' and the two remaining rows. Bob is excluded, while both distinct Alice employees satisfy the condition.",
+      "Point to the highlighted SELECT employee_id, name line. These are the two fields returned for each matching row."
+    ],
+    "question": "Why does this query return two rows instead of one?",
+    "answer": "Employees 1 and 3 both have name = 'Alice'; the condition does not select a unique employee ID.",
+    "context": "This is a conceptual explanation of FROM, WHERE, and SELECT, not a physical execution plan. Without ORDER BY, the query does not guarantee the displayed row order. SELECT * would request all columns."
+  }, '34',{activity:'queries',minutes:3,sources:[MYSQL+'select.html']});
 
   scene('AND and OR filters',['AND','OR','Explicit grouping'],(d,s)=>{
     title(d,'AND and OR filters');const condition=s===0?"name = 'Alice' AND state_code = 56":s===1?"name = 'Alice' OR state_code = 56":"(name = 'Alice' OR name = 'Bob')";
     code(d,'filter',['SELECT employee_id FROM employees','WHERE '+condition+(s===2?'':';'),...(s===2?['  AND state_code = 56;']:[])],75,180,30,62);
     text(d,'result',640,465,s===0?'Matches: 3':s===1?'Matches: 1, 2, 3':'Matches: 2, 3',36,P.green);
-  },'Use the three source employees. AND requires both tests: Alice in state 56 is employee 3. OR allows either: all three rows match Alice or state 56. The grouped example selects Alice or Bob and then requires state 56, returning employees 2 and 3. AND has higher precedence than OR in MySQL, but parentheses make intent clear and prevent common mistakes. SQL also has NULL and three-valued logic; WHERE retains rows whose predicate is TRUE, not FALSE or UNKNOWN. Use IS NULL to test missing values, not equality to NULL.', '36',{activity:'queries',minutes:3,sources:[MYSQL+'operator-precedence.html',MYSQL+'working-with-null.html']});
+  },{
+    "idea": "AND requires both conditions, while OR allows either condition to match.",
+    "builds": [
+      "Read the AND condition and point to Matches: 3. Employee 3 is both named Alice and in state 56; employee 1 fails the state test.",
+      "Read the OR condition and point to Matches: 1, 2, 3. The two Alices pass the name test, and Bob passes the state test.",
+      "Read the parenthesized name condition first, then the AND state condition. Employees 2 and 3 match a listed name and live in state 56."
+    ],
+    "question": "Which employees satisfy the final grouped condition?",
+    "answer": "Employee 2, Bob, and employee 3, Alice; both have state_code 56 and one of the listed names.",
+    "context": "AND has higher precedence than OR, but parentheses make the intended grouping explicit. WHERE retains only TRUE predicates; FALSE and UNKNOWN are excluded. Test missing values with IS NULL rather than = NULL."
+  }, '36',{activity:'queries',minutes:3,sources:[MYSQL+'operator-precedence.html',MYSQL+'working-with-null.html']});
 
   scene('Ordering and limiting',['An explicit order','The first two rows'],(d,s)=>{
     title(d,'Ordering and limiting');code(d,'limit',['SELECT employee_id, name','FROM employees','ORDER BY employee_id','LIMIT 2;'],95,165,32,46,s?3:2);
     table(d,'limited',330,330,[280,340],[['employee_id','name'],...EMPLOYEES.slice(0,s?2:3).map(r=>r.slice(0,2))],{rowHeight:50,fontSize:29});
-  },'LIMIT caps the number of returned rows. Pair it with ORDER BY when the selected subset must be predictable. Ordering by the unique employee_id makes the first two rows unambiguous here. Without ORDER BY, a database may return a different subset after an index change, plan change, or data update. LIMIT syntax varies across database systems; this is MySQL syntax. The source introduces LIMIT but omits ordering, so this scene supplies the necessary qualification.', '36',{activity:'queries',minutes:2,sources:[MYSQL+'limit-optimization.html']});
+  },{
+    "idea": "ORDER BY defines the sequence, and LIMIT keeps the requested number of rows from it.",
+    "builds": [
+      "Point to ORDER BY employee_id and read the displayed order: 1, 2, 3. The unique identifier makes this ordering unambiguous.",
+      "Point to LIMIT 2 and count the remaining rows. The ordered result keeps employee 1 and employee 2, then stops."
+    ],
+    "question": "Would LIMIT 2 alone guarantee employees 1 and 2?",
+    "answer": "No. Without an explicit ordering, the database does not promise which two rows will be returned.",
+    "context": "For predictable subsets, include a unique tie-breaker in ORDER BY. This LIMIT syntax works in MySQL and SQLite, while other products may use different syntax."
+  }, '36',{activity:'queries',minutes:2,sources:[MYSQL+'limit-optimization.html']});
 
   scene('JOIN across tables',['Match the keys','Choose output fields'],(d,s)=>{
     title(d,'JOIN across tables');code(d,'join',['SELECT e.name, s.home_state','FROM employees AS e','JOIN states AS s','  ON e.state_code = s.state_code','WHERE e.employee_id = 1;'],75,170,30,48,s?0:3);
     if(s)table(d,'joined',390,420,[200,330],[['name','home_state'],['Alice','Michigan']],{rowHeight:50,fontSize:28});
-  },'The aliases e and s make column ownership visible. The ON condition pairs employee rows with matching state rows, and WHERE narrows to employee 1. This is an inner join: an employee without a matching state row would not appear. The source introduces JOIN as selecting across tables; this example makes its match rule explicit. LEFT JOIN is a useful next extension when unmatched employees should remain. A correct join condition prevents accidental Cartesian multiplication but does not imply one output row per input in every schema.', '36',{activity:'queries',minutes:3,sources:[MYSQL+'join.html']});
+  },{
+    "idea": "A join combines related rows using an explicit matching condition.",
+    "builds": [
+      "Point to ON e.state_code = s.state_code and identify e as Employees and s as States. WHERE e.employee_id = 1 narrows the employee to the Alice whose state code is 26.",
+      "Point to SELECT e.name, s.home_state and the result Alice, Michigan. The name comes from the employee row, while the state name comes from the matching state row."
+    ],
+    "question": "Where does Michigan in the result come from?",
+    "answer": "The States row whose state_code 26 matches employee 1’s state_code.",
+    "context": "This is an inner join, so unmatched employees would not appear. A LEFT JOIN can preserve them. Join cardinality depends on the keys and match condition; joins do not always return one row per input row."
+  }, '36',{activity:'queries',minutes:3,sources:[MYSQL+'join.html']});
 
   scene('UPDATE changes matching rows',['Preview the target','Update by identifier','The result'],(d,s)=>{
     title(d,'UPDATE changes matching rows');
     code(d,'update',s?['UPDATE employees','SET state_code = 56','WHERE employee_id = 1;']:['SELECT * FROM employees','WHERE employee_id = 1;'],95,180,34,61,s?2:1);
     if(s===2)employeeTable(d,'changed',365,385,[['1','Alice','56']],[1]);
-  },'First inspect which row the predicate selects, then update that identifier. Source slide 34 filters an update by name = Alice, which would change both distinct Alice employees in the full dataset. Use employee_id = 1 when only that person is moving. An UPDATE without WHERE can affect every row. In an explicit transaction, commit makes the change durable and rollback can abandon it before commit. The displayed result assumes the update succeeds and the new referenced state exists.', '34',{activity:'queries',minutes:3,sources:[MYSQL+'update.html']});
+  },{
+    "idea": "Preview the target and update by its identifier when only one employee should change.",
+    "builds": [
+      "Read the preview SELECT and point to WHERE employee_id = 1. Ask which person it targets before making any change.",
+      "Read SET state_code = 56, then point to the same employee_id predicate. The update moves Alice 1 to Wyoming without targeting Alice 3.",
+      "Point to the result row: employee 1, Alice, state 56. Confirm that the employee’s identity remains the same while the state value changes."
+    ],
+    "question": "Why use employee_id = 1 instead of name = 'Alice' for this move?",
+    "answer": "The name condition matches both Alice employees, while employee_id 1 identifies only the intended person.",
+    "context": "Without WHERE, UPDATE can affect every row. A referenced destination state must exist when a foreign key requires it. Within an explicit transaction, commit the successful change or roll it back before committing."
+  }, '34',{activity:'queries',minutes:3,sources:[MYSQL+'update.html']});
 
   scene('DELETE removes matching rows',['Preview assignments','Delete child rows','Delete the employee and commit'],(d,s)=>{
     title(d,'DELETE removes matching rows');
@@ -281,63 +664,168 @@
     code(d,'delete',lines,95,170,34,56,s===0?1:s===1?1:0);
     if(s===0)table(d,'dependencies',360,345,[260,260],[['employee_id','job_code'],['2','J02'],['2','J03']],{rowHeight:53,fontSize:29});
     if(s===2)table(d,'remaining',335,345,[280,320],[['employee_id','name'],['1','Alice'],['3','Alice']],{rowHeight:53,fontSize:30});
-  },'DELETE removes rows while preserving the table definition. Preview employee 2’s two assignments in employee_jobs first. A restrictive foreign key rejects deleting the employee while those child rows still reference it. In one transaction, delete the child assignments, delete the employee, and commit only when the full operation succeeds. On failure, roll back the transaction. The final result retains employees 1 and 3, the distinct Alices. The statements continue across builds rather than being independent alternatives. If a schema instead declares ON DELETE CASCADE, its behavior differs; this example uses the restrictive relationship in the activity. Preview targeted rows before modifying data. No WHERE can mean all rows.', '34, 36',{activity:'queries',minutes:3,sources:[MYSQL+'delete.html',MYSQL+'create-table-foreign-keys.html',MYSQL+'commit.html']});
+  },{
+    "idea": "Remove an employee’s referencing assignments before deleting that employee, within one transaction.",
+    "builds": [
+      "Read the preview SELECT from employee_jobs for employee_id 2. Point to the J02 and J03 rows: these are the two child assignments that currently reference Bob.",
+      "Read BEGIN, then DELETE FROM employee_jobs WHERE employee_id = 2. The transaction removes those referencing child rows first; Bob’s employee row has not yet been deleted.",
+      "Continue the same transaction with DELETE FROM employees WHERE employee_id = 2, then COMMIT. Point to the remaining employee IDs 1 and 3: the two distinct Alices remain."
+    ],
+    "question": "Why delete from employee_jobs before deleting employee 2?",
+    "answer": "The restrictive foreign key rejects deleting Bob while assignment rows still reference him. Removing those child rows first allows the parent deletion.",
+    "context": "The statements continue across builds as one transaction; issue ROLLBACK if the operation fails. An ON DELETE CASCADE relationship would behave differently. DELETE preserves the table definition, and omitting WHERE can remove every row."
+  }, '34, 36',{activity:'queries',minutes:3,sources:[MYSQL+'delete.html',MYSQL+'create-table-foreign-keys.html',MYSQL+'commit.html']});
 
   scene('Schema inspection and DROP',['Inspect the structure','Remove the table'],(d,s)=>{
     title(d,'Schema inspection and DROP');
     code(d,'ddl',s?['DROP TABLE scratch_employees;']:['DESCRIBE employees;'],95,220,39);
     text(d,'effect',640,390,s?'Definition and stored rows are removed':'Columns, types, nullability, and keys',34,s?P.orange:P.green);
     if(s)text(d,'scope',640,490,'Use a disposable example table',30,P.muted);
-  },'DESCRIBE is a MySQL schema-inspection command. DROP TABLE removes a table object and its stored rows; DROP DATABASE removes a database and its objects. This differs from DELETE, which modifies table contents. Many MySQL DDL statements cause implicit commits and are not ordinary rollback demonstrations. The displayed scratch table is intentionally separate from the class’s main data. Do not run DROP against a shared or important database merely to illustrate the syntax. SQL clients commonly use semicolons as statement terminators; a semicolon is not one of the CRUD operations.', '36',{minutes:2,sources:[MYSQL+'describe.html',MYSQL+'drop-table.html',MYSQL+'implicit-commit.html']});
+  },{
+    "idea": "Inspecting a table and removing a table are different operations.",
+    "builds": [
+      "Read DESCRIBE employees. Point to the information it reports: column names, types, nullability, and keys. This MySQL command inspects the definition without changing the rows.",
+      "Read DROP TABLE scratch_employees. Both the table definition and its stored rows disappear. Use a disposable scratch table for this demonstration."
+    ],
+    "question": "How does DROP TABLE differ from DELETE?",
+    "answer": "DELETE removes selected rows and leaves the table definition. DROP TABLE removes the table itself and all its rows.",
+    "context": "Many MySQL DDL statements cause implicit commits, so do not use DROP to demonstrate ordinary transaction rollback. DROP DATABASE removes a database and its objects. The SQLite playground uses its schema panel or PRAGMA table_info instead of MySQL DESCRIBE."
+  }, '36',{minutes:2,sources:[MYSQL+'describe.html',MYSQL+'drop-table.html',MYSQL+'implicit-commit.html']});
 
   scene('SQL prediction practice',['Predict','Run','Explain'],(d,s)=>{
     title(d,'SQL prediction practice');code(d,'question',["SELECT employee_id FROM employees","WHERE name = 'Alice'","ORDER BY employee_id LIMIT 1;"],90,195,31,67);
     text(d,'answer',640,465,s===0?'Which identifier appears?':s===1?'1':'The name matches two rows; ordering selects one.',s===2?29:38,s?P.green:P.ink);
-  },'Use this as the live SQL demonstration handoff. Ask for a prediction and a reason before running the statement against the complete three-employee dataset. The answer is employee_id 1: two names match, ordering puts 1 before 3, and LIMIT keeps one row. Change one clause at a time so learners can explain the effect. The source alternates between demo/06-sql and demo/05-sql paths; use the companion and the instructor’s current course checkout rather than silently asserting which old path is authoritative.', '35',{kind:'activity',activity:'queries',minutes:4});
+  },{
+    "idea": "A filter finds matching rows, and ordering determines which row LIMIT keeps.",
+    "builds": [
+      "Read the query aloud. Ask students which employee identifier it returns, and give them time to explain a prediction before advancing.",
+      "Reveal employee_id 1. Run the query on the original three-employee dataset to check the prediction.",
+      "Trace the clauses in order: the name matches employees 1 and 3, ORDER BY puts 1 first, and LIMIT keeps one row. Both employees named Alice are valid records."
+    ],
+    "question": "What would this query return if we removed LIMIT 1?",
+    "answer": "It would return employee IDs 1 and 3 in that order. The WHERE condition matches both Alices.",
+    "context": "Reset the playground before using the original dataset. Change one clause at a time so students can connect each change to its result."
+  }, '35',{kind:'activity',activity:'queries',minutes:4});
 
   exercise('queries','SQL query playground',4,
     ['Run JOIN, then add before ORDER BY:','WHERE e.employee_id = 1'],
     'Why does one employee produce two rows?','35–36',
-    'Load the Relate · JOIN example in the SQLite playground. Predict the output before running it. Add WHERE e.employee_id = 1 on a new line before ORDER BY and run again. Employee 1 has two job assignments, so the result has two rows. Return to the lecture to see Python send SQL and values through a driver.');
+    {
+    "idea": "A join can return several rows for one employee when that employee has several assignments.",
+    "builds": [
+      "Open the green ↗ link and reset the activity if it was used earlier. Give students 4 minutes to run Relate · JOIN, add WHERE e.employee_id = 1 before ORDER BY, predict the result, and run again. Bring the class back to explain why one employee produces two rows."
+    ],
+    "question": "Why does the filtered join still return two rows?",
+    "answer": "Employee 1 has two job assignments: Chef and Waiter. Each matching assignment contributes a result row.",
+    "context": "The activity runs SQLite locally and needs no database credentials. The WHERE clause belongs after the JOIN clauses and before ORDER BY."
+  });
 
   scene('Python and the database',['A driver','SQL and values','Rows back to Python'],(d,s)=>{
     title(d,'Python and the database');flow(d,['Python','Connector','MySQL'],s,260);
     text(d,'library',640,190,'mysql-connector-python',32,P.green);
     if(s>=1)text(d,'payload',640,450,s===1?'SQL statement + parameters':'Rows become Python values',33,P.blue);
-  },'The source uses mysql-connector-python as its database driver. A driver implements the protocol and maps data between Python and MySQL. PyMySQL, mysqlclient, and async alternatives have their own APIs and parameter conventions. An ORM is a higher abstraction that maps objects and relations; it is not the same thing as the network connector itself. The following snippets illustrate separate parts of one connection lifecycle. Use the complete companion example for a runnable script with configuration and cleanup.', '37–38',{minutes:2,sources:[CONNECTOR+'connector-python-introduction.html']});
+  },{
+    "idea": "A database driver carries requests and results between Python and MySQL.",
+    "builds": [
+      "Follow the path from Python through Connector to MySQL. Name mysql-connector-python as the driver used in these examples.",
+      "Point to SQL statement + parameters. Python gives the driver a statement and its separate values, and the driver communicates the request to MySQL.",
+      "Follow the result back to Python. The driver makes the returned rows available as Python values that the program can read and use."
+    ],
+    "question": "Does importing the driver open a database connection?",
+    "answer": "No. Importing makes the library available; the program must call its connection API with the database configuration.",
+    "context": "Other drivers have their own APIs and parameter conventions. An ORM adds object-to-table mapping above this communication layer. The next snippets show parts of one workflow; the companion contains a complete runnable example."
+  }, '37–38',{minutes:2,sources:[CONNECTOR+'connector-python-introduction.html']});
 
   scene('Connection configuration',['Configuration from the environment','Open the connection'],(d,s)=>{
     title(d,'Connection configuration');code(d,'connect',['import os','import mysql.connector','conn = mysql.connector.connect(','    host=os.environ["DB_HOST"],','    user=os.environ["DB_USER"],','    password=os.environ["DB_PASSWORD"],','    database=os.environ["DB_NAME"]',')'],90,168,29,45,s?2:5);
-  },'Environment variables keep credentials out of the displayed source file and ordinary repository history. Configure them through the instructor’s approved mechanism; an unset required os.environ key produces a clear configuration failure. Environment variables are not a complete secret-management system, and an env file containing secrets must not be committed. The real connection also needs the correct port, network access, server trust/TLS settings, and permissions. Follow the managed database’s TLS instructions rather than disabling certificate checks to make a connection work. This introductory snippet leaves those deployment-specific options to the complete example.', '39',{minutes:3,sources:[CONNECTOR+'connector-python-connectargs.html']});
+  },{
+    "idea": "The program reads connection settings from its environment before opening the database connection.",
+    "builds": [
+      "Point to DB_HOST, DB_USER, DB_PASSWORD, and DB_NAME. These names identify environment variables that the Python code reads with os.environ. Keep the password value off the projector.",
+      "Point to mysql.connector.connect. The supplied settings identify the server, account, and database to use. A missing required environment variable raises an error before that connection can open."
+    ],
+    "question": "Does MySQL Connector automatically discover variables named DB_HOST and DB_PASSWORD?",
+    "answer": "No. Our Python code reads those variables and passes their values to connect. The variable names are a choice made by this application.",
+    "context": "Use the course configuration and required TLS settings. The correct port, network path, server trust, and permissions are also needed. Environment variables keep credentials out of this source file, but are not a complete secret-management system; files containing passwords must stay out of the repository."
+  }, '39',{minutes:3,sources:[CONNECTOR+'connector-python-connectargs.html']});
 
   scene('A parameterized query',['The statement','Separate values','Dictionary rows'],(d,s)=>{
     title(d,'A parameterized query');
     const lines=s===2?['for row in cursor.fetchall():','    print(row["employee_id"], row["name"])']:['cursor = conn.cursor(dictionary=True)','sql = "SELECT employee_id, name FROM employees"','sql += " WHERE state_code = %s"','cursor.execute(sql, (26,))'];
     code(d,'parameters',lines,80,200,30,68,s===0?2:s===1?3:1);
     if(s===2)text(d,'result',640,440,'1  Alice',35,P.green);
-  },'Connector/Python binds values supplied separately to %s placeholders. Do not put quotes around the placeholder or interpolate user input into the SQL string. (26,) is a one-element Python tuple; the comma matters. dictionary=True makes returned rows accessible by column name. fetchall retrieves all remaining rows, which is convenient for this tiny example but can use substantial memory for a large result. Parameter binding is for values, not arbitrary SQL identifiers or whole clauses; validate any dynamic identifiers against an explicit allowlist. The example result assumes the original source dataset.', '39',{activity:'queries',minutes:3,sources:[CONNECTOR+'connector-python-api-mysqlcursor-execute.html',CONNECTOR+'connector-python-api-mysqlcursor-fetchall.html']});
+  },{
+    "idea": "Parameter binding keeps a query's values separate from its SQL structure.",
+    "builds": [
+      "Read the SELECT statement and point to %s. It marks the value used to filter state_code. Leave the placeholder unquoted in the SQL string.",
+      "Point to cursor.execute(sql, (26,)). The driver binds 26 to the placeholder; the comma makes (26,) a one-element tuple. Do not use Python string formatting to insert user values into SQL.",
+      "Read the loop over fetchall. Because the cursor uses dictionary=True, each row can be read by column name. In the original dataset, state 26 returns employee 1, Alice."
+    ],
+    "question": "How would we query state 56 using the same SQL statement?",
+    "answer": "Pass (56,) as the parameter tuple. The SQL text and its %s placeholder stay the same.",
+    "context": "Connector/Python uses %s placeholders; Python sqlite3 uses ?. Binding supplies values, not arbitrary table names or SQL clauses. Validate dynamic identifiers separately. fetchall is convenient for this small result but can consume substantial memory for large results."
+  }, '39',{activity:'queries',minutes:3,sources:[CONNECTOR+'connector-python-api-mysqlcursor-execute.html',CONNECTOR+'connector-python-api-mysqlcursor-fetchall.html']});
 
   scene('Commit or roll back',['A pending write','Successful completion','An exception'],(d,s)=>{
     title(d,'Commit or roll back');code(d,'write',['try:','    cursor.execute(sql, params)','    conn.commit()','except mysql.connector.Error:','    conn.rollback()','    raise'],95,180,32,56,s===0?1:s===1?2:4);
-  },'Here sql and params represent a previously prepared INSERT, UPDATE, or DELETE and its separate values. Connector/Python disables autocommit by default, so transactional DML needs commit when the unit of work succeeds. If execution or commit raises a connector error, rollback attempts to abandon the transaction and re-raising preserves the failure for the caller. A network failure during commit can leave its outcome uncertain; do not blindly repeat non-idempotent writes. This pattern assumes a transactional engine such as InnoDB and does not make DDL rollbackable. Cleanup is handled separately in the next scene.', '39',{activity:'transactions',minutes:3,sources:[CONNECTOR+'connector-python-api-mysqlconnection-commit.html',CONNECTOR+'connector-python-api-mysqlconnection-rollback.html']});
+  },{
+    "idea": "The application commits successful writes and attempts to roll back a failed transaction.",
+    "builds": [
+      "Point to cursor.execute(sql, params). Here sql is a prepared INSERT, UPDATE, or DELETE, and params supplies its values. With Connector/Python's default autocommit setting, the transactional write still needs a commit.",
+      "Advance to conn.commit(). This ends the successful transaction and commits its changes. All writes belonging to the same unit of work should succeed before this call.",
+      "Follow the exception path to conn.rollback() and raise. If execution or commit raises a connector error, the application attempts to abandon the transaction and passes the error back to its caller."
+    ],
+    "question": "Does a SQL error always roll back the entire transaction automatically?",
+    "answer": "No. Error behavior depends on the database and error; this application explicitly calls rollback to abandon the transaction.",
+    "context": "This pattern assumes a transactional engine such as InnoDB and does not make MySQL DDL rollbackable. A lost connection during commit can leave the outcome uncertain; blindly repeating a write may apply it twice. Resource cleanup follows separately."
+  }, '39',{activity:'transactions',minutes:3,sources:[CONNECTOR+'connector-python-api-mysqlconnection-commit.html',CONNECTOR+'connector-python-api-mysqlconnection-rollback.html']});
 
   scene('Reliable cleanup',['A successful run','A failed run','Release resources'],(d,s)=>{
     title(d,'Reliable cleanup');
     if(s<2){flow(d,s?['Connect','Failure','Cleanup']:['Connect','Query','Cleanup'],s?1:2,265);text(d,'guarantee',640,455,'Cleanup belongs on both paths',34,P.green);}
     else code(d,'cleanup',['finally:','    try:','        if cursor is not None:','            cursor.close()','    finally:','        if conn is not None:','            conn.close()'],90,175,31,48);
-  },'Initialize conn = None and cursor = None before a surrounding try, then close resources in finally so the failure path also releases them. Close the cursor before the connection. The nested try/finally ensures a cursor-close failure does not skip closing the connection. The fragment is not a standalone script; combine it with the complete error-handling example. Connector/Python also supports connection and cursor context managers, but exiting them closes resources rather than automatically committing a transaction. Do not assume every database library shares one interface. Fetch or otherwise handle pending results according to the driver’s rules.', '39',{minutes:2,sources:[CONNECTOR+'connector-python-api-mysqlcursor-close.html',CONNECTOR+'connector-python-api-mysqlconnection-close.html']});
+  },{
+    "idea": "Database resources need cleanup on both successful and failed runs.",
+    "builds": [
+      "Follow Connect, Query, Cleanup. After using the results, close the cursor and then the connection so the program releases its resources.",
+      "Follow Connect, Failure, Cleanup. A failed query still leaves resources to release. Put cleanup in finally so the error path reaches it too.",
+      "Read the two finally blocks. Close the cursor if it was created, then close the connection even if closing the cursor raises an error. Initialize both variables to None before the surrounding try."
+    ],
+    "question": "Why is connection cleanup inside a second finally block?",
+    "answer": "It ensures that a cursor-close error cannot skip the attempt to close the connection.",
+    "context": "This fragment belongs inside the complete connection and transaction workflow. Connector/Python's connection and cursor context managers close resources; leaving them does not automatically commit. Fetch or handle pending results according to the driver's rules."
+  }, '39',{minutes:2,sources:[CONNECTOR+'connector-python-api-mysqlcursor-close.html',CONNECTOR+'connector-python-api-mysqlconnection-close.html']});
 
   scene('First meeting handoff',['Review','Next practice'],(d,s)=>{
     title(d,'First meeting handoff');text(d,'review',640,210,'Restaurant normalization',40,P.green);text(d,'deadline',640,310,'Lab 03 · September 23',35,P.orange);
     if(s)text(d,'next',640,440,'Next: schema design and SQL with Python',34);
-  },'The supplied September 22 material asks students to review the normalization example and lists Lab 03: Scripting as due September 23. It points to the introduction-to-databases video, a relational-database reading, and a MySQL cheatsheet in Canvas > Modules > Week 05. Preserve those as source-deck reminders; Canvas is the current course authority. Preview the next meeting’s schema practice, Python demo, and hands-on SQL. Use the next cloud/network scenes as preparation or an appendix according to available class time.', '40–41',{kind:'recap',minutes:1});
+  },{
+    "idea": "Review the restaurant design before using SQL and Python in the next meeting.",
+    "builds": [
+      "Ask students to trace the restaurant tables from repeated assignments to separate employee, job, and state facts. Point to the Lab 03: Scripting reminder for September 23.",
+      "Preview schema design and SQL with Python. Ask students to bring one question about keys, normalization, or query results to the next meeting."
+    ],
+    "question": "Where should the state name live in our final restaurant design?",
+    "answer": "In States, identified by state_code. Employees stores the state code and uses a join to obtain the name.",
+    "context": "For the September 22 meeting, the listed Lab 03 deadline is September 23. Canvas has the current deadline and the Week 05 database video, relational reading, and MySQL cheatsheet. Use the cloud and network slides as preparation if class time permits."
+  }, '40–41',{kind:'recap',minutes:1});
 
   scene('Managed cloud databases',['Provider examples','Service and engine','Shared responsibilities'],(d,s)=>{
     title(d,'Managed cloud databases');
     if(!s)table(d,'cloud',120,190,[260,390,390],[['Provider','Relational examples','Other examples'],['AWS','RDS / Aurora','DynamoDB'],['Google','Cloud SQL / Spanner','Firestore'],['Microsoft','Azure SQL','Cosmos DB']],{rowHeight:74,fontSize:27});
     if(s===1){flow(d,['Managed service','Database engine','Your schema'],1,260);text(d,'aurora',640,455,'Aurora: MySQL/PostgreSQL-compatible service',30,P.green);}
     if(s===2){text(d,'provider',330,235,'Provider',38,P.blue);text(d,'user',940,235,'Your team',38,P.green);text(d,'operations',330,365,'Service operations',31);text(d,'data',940,365,'Data, access, queries',31);}
-  },'The source appendix surveys hosted relational and nonrelational services. It also names DocumentDB, Neptune, Bigtable, Oracle MySQL HeatWave, PolarDB, and other offerings; actual features and compatibility differ by product. Amazon RDS manages supported engines. Aurora is an AWS managed, MySQL/PostgreSQL-compatible engine; correct the source’s placement under “open-source/no license.” Open-source software still has a license, and a managed service can incur charges regardless of the engine’s licensing model. Oracle and SQL Server licensing options vary by engine edition and service. Managed operations do not remove the team’s responsibility for permissions, schema, application logic, or suitable backup/recovery configuration.', '42–44',{minutes:3,sources:['https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Welcome.html','https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/CHAP_AuroraOverview.html','https://cloud.google.com/products/databases','https://azure.microsoft.com/en-us/products/category/databases/']});
+  },{
+    "idea": "A managed service handles database operations while the application team still makes data and access decisions.",
+    "builds": [
+      "Compare the provider rows. AWS, Google, and Microsoft offer services for different data models and workloads. Treat these names as examples, then ask what the application needs to store and query.",
+      "Follow Managed service, Database engine, Your schema. Aurora is an AWS managed service with MySQL and PostgreSQL compatibility. Amazon RDS manages several supported database engines.",
+      "Point to the two responsibilities. The provider operates the service, while your team chooses the schema, permissions, queries, and application behavior. Discuss who must select suitable backup and recovery settings."
+    ],
+    "question": "Does choosing a managed database remove the need to design keys and permissions?",
+    "answer": "No. The application team still defines its data relationships and decides who may access or change them.",
+    "context": "Products differ in features and compatibility. Open-source software still has a license, and managed services may incur charges. Aurora should not be described as an open-source, license-free engine. Oracle and SQL Server licensing options depend on edition and service."
+  }, '42–44',{minutes:3,sources:['https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Welcome.html','https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/CHAP_AuroraOverview.html','https://cloud.google.com/products/databases','https://azure.microsoft.com/en-us/products/category/databases/']});
 
   scene('Database network connections',['The destination','The service port','Access checks'],(d,s)=>{
     title(d,'Database network connections');box(d,'client',110,260,300,120,'Client',true,P.blue,38);box(d,'server',850,260,320,120,'MySQL server',true,P.green,33);
@@ -345,53 +833,140 @@
     text(d,'destination',640,190,s?'host:3306':'database hostname',35,P.green);
     if(s>=1)text(d,'port',640,425,'TCP port 3306',31,P.blue);
     if(s===2)text(d,'checks',640,510,'Route · firewall · TLS · authentication',30,P.orange);
-  },'A hostname/IP identifies a destination and a transport protocol plus port identifies a service endpoint. MySQL commonly listens on TCP 3306; a configured server can use another port. Common examples from the source include PostgreSQL 5432, Redis 6379, MongoDB 27017, SSH 22, and HTTP/HTTPS 80/443. Correct the source’s less precise entries: Oracle’s typical listener is TCP 1521; SQL Server commonly uses TCP 1433, while its Browser service uses UDP 1434. The source’s Oracle 1830 should not be presented as the ordinary database listener. For the lab, use the instructor-provided endpoint and approved network path. Reachability, TLS trust, and database credentials are distinct checks; a firewall rule should not expose the database to every internet address by default.', '45',{minutes:3,sources:['https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ConnectToInstance.html','https://learn.microsoft.com/en-us/sql/database-engine/configure-windows/configure-a-windows-firewall-for-database-engine-access?view=sql-server-ver17']});
+  },{
+    "idea": "A connection needs the right destination, service port, and access configuration.",
+    "builds": [
+      "Point from the client to the database hostname. The hostname identifies the destination server; it does not specify which service to contact there.",
+      "Read host:3306. MySQL commonly listens on TCP port 3306, so the client needs both the host and the configured port. A server can use a different port.",
+      "Trace the access checks: route, firewall, TLS, and authentication. Being able to reach a server does not prove that its certificate is trusted or that the account may use the database."
+    ],
+    "question": "Does a correct password guarantee a connection will succeed?",
+    "answer": "No. The client also needs a reachable host and port, permitted network access, and the required TLS configuration.",
+    "context": "Use the course endpoint and approved network path. Common ports include PostgreSQL 5432, Redis 6379, MongoDB 27017, SSH 22, and HTTP/HTTPS 80/443. Oracle commonly uses TCP 1521; SQL Server commonly uses TCP 1433, while SQL Server Browser uses UDP 1434. Avoid opening database access to every internet address."
+  }, '45',{minutes:3,sources:['https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ConnectToInstance.html','https://learn.microsoft.com/en-us/sql/database-engine/configure-windows/configure-a-windows-firewall-for-database-engine-access?view=sql-server-ver17']});
 
   scene('Schema and SQL practice',['The second meeting','Today’s work'],(d,s)=>{
     title(d,'Schema and SQL practice');text(d,'date',640,205,'September 24, 2026',34,P.muted);
     flow(d,['Design','Query','Load'],s?1:0,335);
-  },'This is the second class meeting in the supplied PowerPoint. Begin with outstanding questions and move to the social-media schema exercise, repository update, SQL/Python demonstration, and data engineering practice. Students connect to the course MySQL service only using the instructor’s current configuration. The deck’s independent activity links let students explore keys, queries, transactions, normalization, and ETL without database credentials.', '46–47',{kind:'title',minutes:1});
+  },{
+    "idea": "Today's work connects schema design, SQL queries, and loading data.",
+    "builds": [
+      "Welcome students to the September 24 meeting. Collect remaining questions from the first session and point to Design as the starting point for today's work.",
+      "Follow Design, Query, Load. Preview the social application schema, the course repository update, the Python demonstration, and the data engineering exercise."
+    ],
+    "question": "Why decide on keys before writing the data-loading script?",
+    "answer": "The script needs a consistent way to identify records, link related rows, and handle repeated input.",
+    "context": "Use the current course configuration for MySQL connections. The linked browser activities run without database credentials and can support students while a course connection is being configured."
+  }, '46–47',{kind:'title',minutes:1});
 
   scene('A social application schema',['One wide table','Separate people and posts','The relationship'],(d,s)=>{
     title(d,'A social application schema');
     if(!s)table(d,'wide',120,205,[180,290,440],[['name','email','message'],['Mary','mary@example.com','I dislike snow.'],['Mary','mary@example.com','More snow today.']],{rowHeight:82,fontSize:29,highlightCols:[0,1]});
     else{table(d,'users',90,230,[140,220],[['user_id','name'],['1','Mary'],['2','Peter']],{rowHeight:65,fontSize:30});table(d,'posts',735,230,[140,140,200],[['post_id','user_id','message'],['10','1','Snow!'],['11','1','More snow.']],{rowHeight:65,fontSize:27});if(s===2)d.arrow('author',470,328,715,328,P.green,4);}
-  },'Give table groups ten minutes to propose fields for users and posted messages, then explain whether one table is suitable. The source shows Mary and Peter with names, emails, messages, and dates. This adapted sample adds a second Mary post to reveal repeated profile data and uses example.com addresses. A common design gives Users a user_id and Posts a post_id, author user_id foreign key, body, and timestamp. Email uniqueness, deletion behavior, optional profiles, and multiple authors are domain decisions. Do not treat a person’s current display name as a permanent key. Ask students to state their assumptions and draw the relationship.', '48',{kind:'activity',activity:'keys',minutes:10});
+  },{
+    "idea": "Separate user facts from post facts and connect them with a user identifier.",
+    "builds": [
+      "Point to Mary's repeated name and email in the wide table. Give groups time to propose user and post fields, and ask what would need updating if Mary's email changed.",
+      "Reveal Users and Posts. Mary and Peter each have a user_id, while each post has its own post_id. Add fields such as email and timestamps when discussing the group's design.",
+      "Follow user_id 1 from both posts back to Mary. The two posts belong to one user, so a foreign key can check that their author exists. Ask groups to explain their relationship and assumptions."
+    ],
+    "question": "Why should a post refer to user_id rather than the author's display name?",
+    "answer": "A display name may repeat or change. A stable, unique user_id identifies the intended user even when the name changes.",
+    "context": "Allow about ten minutes for group design and discussion across these builds. Email uniqueness, deletion behavior, optional profiles, and multiple authors require explicit domain decisions. The pictured design assumes each post has one author."
+  }, '48',{kind:'activity',activity:'keys',minutes:10});
 
   scene('Updating the course fork',['Inspect and save work','Bring upstream changes','Publish your fork'],(d,s)=>{
     title(d,'Updating the course fork');
     const lines=[['git status','git remote -v'],['git switch main','git fetch upstream','git merge upstream/main'],['git push origin main']][s];code(d,'git',lines,100,220,35,75);
     if(!s)text(d,'save',640,435,'Save your changes before switching branches',31,P.orange);
-  },'These are student exercise instructions, not operations the slide performs. Inspect status, review the intended changes, and commit or otherwise preserve current work before switching branches. Verify origin points to the student’s fork and upstream to the instructor’s current course repository. Fetch downloads upstream history and merge integrates it, potentially requiring conflict resolution. Push publishes the local main branch to the fork. Correct source slide 49’s missing git before switch and its typographic command-line dashes and quotes. A clean merge often creates its own merge commit, so a second blanket commit is not inherently necessary.', '49',{kind:'activity',minutes:3,sources:['https://git-scm.com/docs/git-fetch','https://git-scm.com/docs/git-merge']});
+  },{
+    "idea": "Bring instructor changes into the local repository, then publish the updated branch to the student's fork.",
+    "builds": [
+      "Read git status and git remote -v. Have students preserve their current work before switching branches. Check that origin points to their fork and upstream to the instructor repository.",
+      "Follow the three commands: switch to main, fetch upstream history, then merge upstream/main. Fetch downloads the commits; merge integrates them into the current branch. Resolve any merge conflicts before continuing.",
+      "Read git push origin main. This publishes the updated local main branch to the student's fork. Confirm that the merge and local checks have finished first."
+    ],
+    "question": "Does git fetch upstream change the files on the current branch by itself?",
+    "answer": "No. It downloads upstream history and updates remote-tracking references. The merge step integrates that history into the current branch.",
+    "context": "Use the repository and branch names configured for this course. A merge can fast-forward or create a merge commit; an additional blanket commit is not always needed. These commands are instructions for the student's terminal."
+  }, '49',{kind:'activity',minutes:3,sources:['https://git-scm.com/docs/git-fetch','https://git-scm.com/docs/git-merge']});
 
   scene('SQL with Python demo',['Configure','Query','Explain the result'],(d,s)=>{
     title(d,'SQL with Python demo');flow(d,['Environment','Connector','Rows'],s,275);
     text(d,'question',640,190,['Which database will this reach?','Which values are parameters?','What happens if the query fails?'][s],35);
     text(d,'demo',640,465,'Course demo: SQL with Python',30,P.green);
-  },'Open the current course Python/SQL example in a terminal and walk through configuration, connection, parameterized execution, result handling, and resource cleanup. Have students identify the host, database, and user without displaying the password on the projector. Run a harmless SELECT first and deliberately use a controlled invalid query to discuss the error path. The source names demo/05-sql here and demo/06-sql earlier; the companion provides local examples and should direct learners to the current course materials rather than an unverified historical path.', '50',{kind:'activity',activity:'queries',minutes:5});
+  },{
+    "idea": "Trace one Python query from connection settings to returned rows and cleanup.",
+    "builds": [
+      "Open the course Python example and identify its host, database, and user. Ask which database this configuration reaches without displaying the password.",
+      "Run a SELECT and point to the SQL statement and its separate parameters. Have students predict which rows the parameter values should select before inspecting the output.",
+      "Use a controlled invalid query to follow the error path. Show where the error is reported and where resources close. For a failed transactional write, also identify the application's rollback path."
+    ],
+    "question": "Which part of the example should change when we want to filter for a different state?",
+    "answer": "Change the bound state value. Keep the SQL placeholder and the code that passes parameters separately.",
+    "context": "Use the complete companion example and current course connection instructions. Driver error handling, transaction decisions, and resource cleanup serve different purposes; trace each in the relevant code."
+  }, '50',{kind:'activity',activity:'queries',minutes:5});
 
   scene('ETL into related tables',['Extract JSON','Transform and validate','Load relationships'],(d,s)=>{
     title(d,'ETL into related tables');flow(d,['JSON','Python','SQL database'],s,225);
     if(s>=1)text(d,'transform',640,510,'Parse · validate · assign stable keys',30,P.green);
     if(s===2){box(d,'users',875,395,145,80,'Users',true,P.blue,27);box(d,'posts',1040,395,145,80,'Posts',true,P.green,27);}
-  },'The source’s data engineering diagram extracts a JSON source, transforms it in process.py, and loads two tables in an AWS RDS SQL database. Preserve the same data flow and make the relationship explicit. Parse and validate before loading, preserve or construct stable identifiers, and load parent rows before dependent rows when foreign keys require them. Use parameterized statements and a transaction boundary appropriate to the batch. Decide what a repeated load should do so retries do not create accidental duplicate records. The ETL activity lets students vary valid/invalid records and see the effect on related tables.', '51',{activity:'etl',minutes:4});
+  },{
+    "idea": "An ETL script validates source records before loading rows and their relationships.",
+    "builds": [
+      "Follow JSON to Python to the SQL database. Name the three stages: extract the records, transform them, and load the resulting rows.",
+      "Point to Parse, validate, assign stable keys. Check required fields, types, and identifiers before constructing database writes. Decide what to do with invalid records and repeated input.",
+      "Reveal Users and Posts. Load a user before a post that references that user, and pass values as bound parameters. Group related writes in a transaction so the application can roll back the chosen batch if loading fails."
+    ],
+    "question": "Why load a new user before a post that references that user?",
+    "answer": "The post's foreign key needs a matching user row. Loading the post first would fail when that constraint is enforced.",
+    "context": "Choose the batch boundary and repeated-load policy explicitly. The browser exercise uses employee records and an existing state lookup to demonstrate validation, bound values, and atomic batch loading."
+  }, '51',{activity:'etl',minutes:4});
 
   exercise('etl','JSON → SQL',4,
     ['Inspect rejected records. Load the sample twice.'],
     'Why are only two rows stored?','51',
-    'Inspect the accepted preview and rejected records before loading. The first load commits two accepted employees. The second load conflicts with stored primary keys and rolls back the entire attempted batch, leaving the original two stored rows. Return to the course data engineering exercise and discuss the chosen behavior for repeated loads.');
+    {
+    "idea": "Validation selects acceptable records, and a transaction controls whether a load is kept.",
+    "builds": [
+      "Open the green ↗ link and reset the activity if it was used earlier. Give students 4 minutes to inspect the accepted preview and rejected records, then load the sample twice. Bring them back to explain why only two rows remain stored."
+    ],
+    "question": "Why does the second load leave the database with the same two rows?",
+    "answer": "The first load commits two accepted employees. The second load conflicts with their stored primary keys, so the application rolls back that attempted batch and keeps the original rows.",
+    "context": "The preview does not write data. The sample contains invalid records and a repeated ID; the default transform keeps the first valid record for an ID. Conflicts with IDs already stored in SQL are checked during loading."
+  });
 
   scene('Hands-on data engineering',['Schema and queries','An ETL script','A supported workspace'],(d,s)=>{
     title(d,'Hands-on data engineering');
     const prompts=['Design keys. Create tables. Query a relationship.','Validate JSON. Load related rows. Test a failure.','Use the course database and approved connection path.'];text(d,'task',640,225,prompts[s],s===2?31:34);
     flow(d,['Predict','Run','Inspect'],s,365);
-  },'The source’s CS 1 exercise covers SQL schema design and querying. CS 2 covers ETL with a SQL database and Python. Give students time to test a correct input and a deliberate invalid reference, then explain whether any partial load remains. The source suggests a university HPC/VS Code workspace as an alternative client environment: start the approved workspace, clone the fork, open a terminal, and configure Python. That does not mean the HPC system is automatically the database server. Its displayed institution URL and embedded repository targets are inconsistent, so use the instructor’s current setup instructions. Confirm database endpoint, permissions, and credentials through the course channel.', '51–52',{kind:'activity',activity:'etl',minutes:12});
+  },{
+    "idea": "Test both valid input and a failure before trusting a data-loading workflow.",
+    "builds": [
+      "Start the schema and query exercise. Have students define keys, create the tables, and write a query that follows one relationship. Ask them to predict the result before running it.",
+      "Move to the Python ETL exercise. Test valid JSON, then introduce an invalid reference and inspect the stored rows. Ask students to explain whether their chosen transaction boundary prevents a partial load.",
+      "Check the workspace and connection setup. Students may use the approved local or university workspace, but they still need the course database endpoint and permissions. Inspect the result of each test before moving on."
+    ],
+    "question": "What evidence would show that a failed batch was rolled back completely?",
+    "answer": "Compare the stored rows before and after the failed attempt. The earlier committed data should remain, with no new rows or changes from that attempted batch.",
+    "context": "Allow about twelve minutes for the exercise and discussion. A university HPC or VS Code workspace is a client environment, not automatically the database server. Use current course setup instructions for repository, Python, network access, and credentials."
+  }, '51–52',{kind:'activity',activity:'etl',minutes:12});
 
   scene('SQL handoff',['The assignment','Next class','An exit question'],(d,s)=>{
     title(d,'SQL handoff');text(d,'lab',640,220,'Lab 04 · Working with SQL',42,P.green);text(d,'due',640,315,'Due September 30',36,P.orange);
     if(s===1)text(d,'next',640,465,'Next: NoSQL databases',37);
     if(s===2)text(d,'question',640,465,'Which table owns each fact?',38);
-  },'The supplied lecture lists Lab 04: Working with SQL as due September 30 and previews an introduction to NoSQL. It directs students to Canvas > Module 02: Week 06 for “What is a NoSQL Database?” and “What is MongoDB?” readings. Preserve these as source-deck dates and titles; Canvas is the current assignment authority. Return to the opening questions and ask students to explain one design decision using keys, dependencies, transactions, or a measured query need. The final question reconnects table design to trustworthy scripts and ETL.', '53–54',{kind:'recap',minutes:2});
+  },{
+    "idea": "Use keys, dependencies, and transactions to explain where each fact belongs and how it stays consistent.",
+    "builds": [
+      "Point to Lab 04: Working with SQL and the September 30 deadline. Have students check the current assignment instructions in Canvas.",
+      "Preview the next class on NoSQL databases. Ask students to bring the same design questions: what is stored, how is it identified, and which queries matter?",
+      "Return to the question, Which table owns each fact? Ask each group to explain one design choice from the restaurant, social application, or ETL exercise."
+    ],
+    "question": "Which table should own a user's email address when that user writes many posts?",
+    "answer": "Users should store the email address. Posts should refer to the user through user_id, so an email change does not require editing every post.",
+    "context": "The listed Lab 04 deadline is September 30. Canvas remains the authority for current dates and instructions. Prepare the Week 06 readings, What is a NoSQL Database? and What is MongoDB?, in Module 02."
+  }, '53–54',{kind:'recap',minutes:2});
 
   window.COURSE_DECKS=window.COURSE_DECKS||{};
   window.COURSE_DECKS[5]={id:5,title:'SQL',date:'September 22 & 24, 2026',source:'lectures/lecture-05/index.html',scenes};

@@ -12,7 +12,7 @@ const errors = [];
 const warnings = [];
 const lectures = [
   {id:4,sourceSlideCount:57,activities:['pipeline','path','streams','control','venv','environments']},
-  {id:5,sourceSlideCount:54,activities:['keys','normalization','queries','transactions','etl']}
+  {id:5,sourceSlideCount:54,structuredNotes:true,activities:['keys','normalization','queries','transactions','etl']}
 ];
 const wordLimit = 45;
 const definitionLimit = 18;
@@ -109,7 +109,7 @@ function checkDrawing(items, label, knownKeys) {
   stats.builds++;
 }
 
-function validateDeck({id,sourceSlideCount,activities:activityIds}) {
+function validateDeck({id,sourceSlideCount,structuredNotes=false,activities:activityIds}) {
   const activities = new Set(activityIds);
   const padded = String(id).padStart(2, '0');
   const context = vm.createContext({ window: {}, console });
@@ -139,6 +139,16 @@ function validateDeck({id,sourceSlideCount,activities:activityIds}) {
     ids.add(sc.id);
     if (!nonempty(sc.title)) fail(label, 'title is missing');
     if (!nonempty(sc.notes)) fail(label, 'presenter notes are missing');
+    if (structuredNotes && !sc.teaching) fail(label, 'structured teaching notes are missing');
+    if (sc.teaching) {
+      for (const field of ['idea','question','answer']) {
+        if (!nonempty(sc.teaching[field])) fail(label, `teaching.${field} must be a nonempty string`);
+      }
+      if (!Array.isArray(sc.teaching.builds) || sc.teaching.builds.length !== sc.steps || sc.teaching.builds.some(build => !nonempty(build))) {
+        fail(label, 'teaching.builds must contain one nonempty instruction per animation step');
+      }
+      if (sc.teaching.context !== undefined && !nonempty(sc.teaching.context)) fail(label, 'teaching.context must be nonempty when supplied');
+    }
     if (!Number.isFinite(sc.minutes) || sc.minutes <= 0) fail(label, 'minutes must be a positive finite number');
     else stats.minutes += sc.minutes;
     if (sc.activity !== undefined && !activities.has(sc.activity)) fail(label, `unknown activity ${JSON.stringify(sc.activity)}; use ${[...activities].join(', ')}`);

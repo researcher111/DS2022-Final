@@ -68,6 +68,29 @@
   function notesParagraphs(target,text){
     String(text).split(/\n\s*\n|\n/).filter(Boolean).forEach(p=>target.append(el('p','',p)));
   }
+  function teachingNotes(target,sc,step=null){
+    if(!sc.teaching){notesParagraphs(target,sc.notes);return;}
+    const t=sc.teaching;
+    const paragraph=(parent,label,value,cls='')=>{
+      const p=el('p',cls);p.append(el('strong','',label+' '),document.createTextNode(value));parent.append(p);
+    };
+    paragraph(target,'Main idea:',t.idea,'teaching-idea');
+    const build=(parent,i)=>paragraph(parent,`Step ${i+1}:`,t.builds[i]);
+    if(step===null){t.builds.forEach((_,i)=>build(target,i));}
+    else{
+      const current=el('div','teaching-current');
+      current.append(el('p','build',`Step ${step+1} of ${sc.steps}: ${sc.states[step]}`));
+      current.append(el('p','',t.builds[step]));target.append(current);
+    }
+    paragraph(target,'Ask the class:',t.question);
+    if(step===null)paragraph(target,'Expected answer:',t.answer);
+    else{
+      const answer=el('details','teaching-answer');answer.append(el('summary','','Expected answer'),el('p','',t.answer));target.append(answer);
+      const all=el('details','teaching-all');all.append(el('summary','','All animation steps'));t.builds.forEach((_,i)=>build(all,i));target.append(all);
+    }
+    if(t.context)paragraph(target,'Teaching context:',t.context,'teaching-context');
+    if(sc.sourceSlides?.length)target.append(el('p','teaching-source','Source PowerPoint slides '+sc.sourceSlides.join(', ')+'.'));
+  }
   function presenter(){
     document.body.className='presenter';document.body.innerHTML='<header><div><h1></h1><p>Presenter view · <span id="planned-duration"></span> planned minutes</p><span class="connection" id="connection"></span></div><div><span class="clock" id="clock">0:00</span> <button id="clock-button">Start clock</button> <button id="reset-clock">↺</button></div></header><div class="workspace"><section><div class="preview" id="preview"></div><div class="timing"><span id="scene-time"></span><span id="pace"></span></div><div class="speaker-tools" id="speaker-tools"></div><div class="timeline"><span id="timeline-progress"></span></div><label for="jump">Slide </label><select id="jump"></select><p class="next" id="next-scene"></p><a class="guide-link" id="guide-link" target="_blank">Full teaching guide</a></section><section id="notes" aria-live="polite"></section></div>';
     $('planned-duration').textContent=total;
@@ -88,11 +111,11 @@
     $('pace').textContent=`Build ${state.step+1} / ${sc.steps}`;
     $('timeline-progress').style.width=Math.min(100,elapsed()/60/total*100)+'%';$('jump').value=state.slide;
     $('next-scene').textContent=state.slide+1<deck.scenes.length?'Next: '+deck.scenes[state.slide+1].title:'Final scene';
-    const notes=$('notes');if(changed||!notes.childElementCount){notes.replaceChildren(el('h2','',sc.title));notes.append(el('p','build',sc.states?.[state.step]||`Build ${state.step+1}`));notesParagraphs(notes,sc.notes);const sources=el('p','sources');sourceList(sc,sources);notes.append(sources);notes.scrollTop=0;}
+    const notes=$('notes');if(changed||!notes.childElementCount){notes.replaceChildren(el('h2','',sc.title));if(!sc.teaching)notes.append(el('p','build',sc.states?.[state.step]||`Build ${state.step+1}`));teachingNotes(notes,sc,state.step);const sources=el('p','sources');sourceList(sc,sources);notes.append(sources);notes.scrollTop=0;}
   }
   function guide(){
     document.body.className='guide';const tools=el('div','guide-tools');const a=el('a','','← Lecture deck');a.href=location.pathname.split('/').pop();tools.append(a,button('Print teaching guide','Print teaching guide',()=>window.print()));document.body.append(tools,el('h1','',deck.title));document.body.append(el('p','intro',`${deck.date} · ${deck.scenes.length} scenes · ${total} planned minutes. Adjust the pace to your class. Advance each animation with the right arrow or Space. Pause at the prediction prompts before revealing the next build.`));
-    deck.scenes.forEach((sc,i)=>{const article=el('article');article.append(el('div','meta',`${pad(i+1)} · ${starts[i]}–${starts[i]+sc.minutes} min · ${sc.steps} builds`),el('h2','',sc.title));const row=el('div','guide-row'),preview=svg(),notes=el('div');render(preview,sc,sc.steps-1);row.append(preview,notes);if(sc.definition)notes.append(el('p','',`${sc.term}: ${sc.definition}`));notesParagraphs(notes,sc.notes);if(sc.states)notes.append(el('p','meta','Builds: '+sc.states.join(' / ')));const sources=el('p','sources');sourceList(sc,sources);notes.append(sources);article.append(row);document.body.append(article);});
+    deck.scenes.forEach((sc,i)=>{const article=el('article');article.append(el('div','meta',`${pad(i+1)} · ${starts[i]}–${starts[i]+sc.minutes} min · ${sc.steps} builds`),el('h2','',sc.title));const row=el('div','guide-row'),preview=svg(),notes=el('div');render(preview,sc,sc.steps-1);row.append(preview,notes);if(sc.definition)notes.append(el('p','',`${sc.term}: ${sc.definition}`));teachingNotes(notes,sc);if(sc.states&&!sc.teaching)notes.append(el('p','meta','Builds: '+sc.states.join(' / ')));const sources=el('p','sources');sourceList(sc,sources);notes.append(sources);article.append(row);document.body.append(article);});
   }
   function openPresenter(){if(channel){$('presenter').click();return;}if(presenterWindow&&!presenterWindow.closed){presenterWindow.focus();publish();return;}const url=location.pathname.split('/').pop()+'?presenter=1&session='+encodeURIComponent(session);presenterWindow=window.open(url,'ds2022-presenter-'+id,'popup,width=1300,height=850');if(!presenterWindow)announce('Allow pop-ups to open presenter view.');}
   function fullscreen(){if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});else if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>announce('Use your browser’s full-screen command.'));else announce('Use your browser’s full-screen command.');}
