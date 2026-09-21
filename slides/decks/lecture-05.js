@@ -628,18 +628,69 @@
     "context": "For predictable subsets, include a unique tie-breaker in ORDER BY. This LIMIT syntax works in MySQL and SQLite, while other products may use different syntax."
   }, '36',{activity:'queries',minutes:2,sources:[MYSQL+'limit-optimization.html']});
 
-  scene('JOIN across tables',['Match the keys','Choose output fields'],(d,s)=>{
-    title(d,'JOIN across tables');code(d,'join',['SELECT e.name, s.home_state','FROM employees AS e','JOIN states AS s','  ON e.state_code = s.state_code','WHERE e.employee_id = 1;'],75,170,30,48,s?0:3);
-    if(s)table(d,'joined',390,420,[200,330],[['name','home_state'],['Alice','Michigan']],{rowHeight:50,fontSize:28});
+  scene('JOIN across tables',['Read the query','See both input tables','Reject a nonmatching pair','Match Alice 1 to Michigan','Copy the first result row','Match Bob to Wyoming','Copy the second result row','Match Alice 3 to Wyoming','Copy the third result row'],(d,s)=>{
+    title(d,'JOIN across tables');
+    if(s===0){
+      code(d,'join',['SELECT e.employee_id, e.name, s.home_state','FROM employees AS e','JOIN states AS s','  ON e.state_code = s.state_code','ORDER BY e.employee_id;'],75,190,30,52,3);
+      return;
+    }
+    const active=s>=3?Math.floor((s-3)/2):-1;
+    const pending=s>=3&&s%2===1;
+    const emitted=s>=3?Math.floor((s-2)/2):0;
+    const employeeIndex=s===2?0:active;
+    const stateIndex=s===2?1:active<0?-1:STATES.findIndex(row=>row[0]===EMPLOYEES[active][2]);
+    const rowY=index=>205+(index+1.5)*48;
+    const resultRows=EMPLOYEES.slice(0,emitted).map(row=>[row[0],row[1],STATES.find(state=>state[0]===row[2])[1]]);
+    text(d,'join-condition',640,130,'ON e.state_code = s.state_code',27,P.green);
+    text(d,'join-employees-label',320,175,'Employees',30);
+    text(d,'join-states-label',1000,175,'States',30);
+    table(d,'join-employees',65,205,[190,140,180],[['employee_id','name','state_code'],...EMPLOYEES],{rowHeight:48,fontSize:27,highlightRows:employeeIndex<0?[]:[employeeIndex+1]});
+    table(d,'join-states',795,205,[170,240],[['state_code','home_state'],...STATES],{rowHeight:48,fontSize:27,highlightRows:stateIndex<0?[]:[stateIndex+1]});
+    if(employeeIndex>=0){
+      const color=s===2?P.red:P.green;
+      d.rect('join-employee-key',395,rowY(employeeIndex)-24,180,48,'none',color,0,3);
+      d.rect('join-state-key',795,rowY(stateIndex)-24,170,48,'none',color,0,3);
+      d.arrow('join-match',590,rowY(employeeIndex),780,rowY(stateIndex),color,3);
+      text(d,'join-comparison',685,230,s===2?'26 ≠ 56':EMPLOYEES[employeeIndex][2]+' = '+STATES[stateIndex][0],27,color);
+    }
+    text(d,'join-result-label',180,474,'Result',31,P.green);
+    if(s===2)text(d,'join-no-match',180,519,'No row added',27,P.red);
+    if(s===8)text(d,'join-complete',180,519,'3 matches',27,P.green);
+    table(d,'join-result',350,450,[190,150,260],[['employee_id','name','home_state'],...resultRows],{rowHeight:48,fontSize:27});
+
+    // Stable copy keys move selected values from their source cells into the result.
+    // Keep the source rows intact; a state can match more than one employee.
+    const replaced=new Set();
+    for(let row=1;row<=emitted;row++)for(let col=0;col<3;col++)replaced.add(`join-result-${row}-${col}-text`);
+    if(pending){
+      replaced.add(`join-employees-${active+1}-0-text`);
+      replaced.add(`join-employees-${active+1}-1-text`);
+      replaced.add(`join-states-${stateIndex+1}-1-text`);
+    }
+    d.items=d.items.filter(item=>!replaced.has(item.key));
+    for(let row=0;row<=active;row++){
+      const employee=EMPLOYEES[row],state=STATES.findIndex(value=>value[0]===employee[2]);
+      const staged=pending&&row===active,resultY=450+(row+1.5)*48;
+      const values=[employee[0],employee[1],STATES[state][1]];
+      const sourceX=[160,325,1085],resultX=[445,615,820];
+      values.forEach((value,col)=>d.text(`join-copy-${row}-${col}`,staged?sourceX[col]:resultX[col],staged?rowY(col===2?state:row):resultY,value,27,col===2?P.green:P.blue,'middle',450));
+    }
   },{
     "idea": "A join combines related rows using an explicit matching condition.",
     "builds": [
-      "Point to ON e.state_code = s.state_code and identify e as Employees and s as States. WHERE e.employee_id = 1 narrows the employee to the Alice whose state code is 26.",
-      "Point to SELECT e.name, s.home_state and the result Alice, Michigan. The name comes from the employee row, while the state name comes from the matching state row."
+      "Point to ON e.state_code = s.state_code. Explain that e means Employees and s means States. We select the employee’s ID and name plus the matching state’s name, then order the result by employee ID.",
+      "Point to the two input tables and the empty Result header. Ask students to find the shared state_code column before advancing. Both Alice rows have different employee IDs.",
+      "Point to employee 1’s code 26 and Wyoming’s code 56. The codes differ, so this pair adds no result row. Alice can still match a different States row.",
+      "Follow the arrow from employee 1 to Michigan. Both codes are 26. Point to the colored ID, employee name, and state name; these are the values we will copy into the result.",
+      "Follow the colored values into the first result row: 1, Alice, Michigan. The ID and name came from Employees, and Michigan came from States. Both input rows remain available.",
+      "Point to Bob’s code 56 and Wyoming’s code 56. Ask students to predict the next result row before advancing.",
+      "Follow 2, Bob, and Wyoming into the second result row. We add a row for this matching pair and keep the first result row.",
+      "Point to employee 3, the other Alice, and follow code 56 to the same Wyoming row. Explain that a matched state row remains available for other employees.",
+      "Follow 3, Alice, and Wyoming into the third result row. Count the three matching pairs and point out that Wyoming appears twice because two employees matched it."
     ],
-    "question": "Where does Michigan in the result come from?",
-    "answer": "The States row whose state_code 26 matches employee 1’s state_code.",
-    "context": "This is an inner join, so unmatched employees would not appear. A LEFT JOIN can preserve them. Join cardinality depends on the keys and match condition; joins do not always return one row per input row."
+    "question": "Why does Wyoming appear in two result rows?",
+    "answer": "Bob, employee 2, and Alice, employee 3, both have state_code 56, so each matches the Wyoming row.",
+    "context": "This animation illustrates matching pairs and copying selected fields, not the database’s physical execution algorithm. The failed comparison rejects only that pair. Input rows are not consumed or changed. ORDER BY e.employee_id specifies the displayed result order. This is an inner join: an employee with no matching state would be absent; a LEFT JOIN could retain that employee. Here each employee matches one state because state_code is unique in States; other joins can produce different numbers of rows. Use Right or Space to advance, A to play, and R to replay."
   }, '36',{activity:'queries',minutes:3,sources:[MYSQL+'join.html']});
 
   scene('UPDATE changes matching rows',['Preview the target','Update by identifier','The result'],(d,s)=>{
