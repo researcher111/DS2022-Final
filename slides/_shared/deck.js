@@ -36,6 +36,7 @@
     $('play').textContent=state.playing?'Ⅱ':'▷';$('play').setAttribute('aria-label',state.playing?'Pause animation (A)':'Play this animation (A)');
     $('build-progress').style.width=((state.slide+(state.step+1)/scene().steps)/deck.scenes.length*100)+'%';
     document.body.classList.toggle('blanked',state.blanked);
+    document.body.classList.toggle('activity-break',scene().activityBreak===true);
     if($('activity')){$('activity').href=activityLink(scene());$('activity').title=scene().activity?'Open this student activity':'All student activities';$('activity').setAttribute('aria-label',$('activity').title);}
     writeHash();publish();
     $('live').textContent=`Slide ${state.slide+1}. ${scene().title}. ${scene().states?.[state.step]||'Build '+(state.step+1)}`;

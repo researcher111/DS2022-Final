@@ -28,6 +28,16 @@
     const sourceNumbers=sourceSlides.split(',').flatMap(part=>{const ends=part.trim().split(/[–-]/).map(Number);return ends.length===1?ends:Array.from({length:ends[1]-ends[0]+1},(_,i)=>ends[0]+i);});
     scenes.push(Object.assign({id:name.toLowerCase().replace(/[^a-z0-9]+/g,'-'),title:name,kind:'visual',steps:states.length,states,draw,minutes:2,sourceSlides:sourceNumbers,notes:'Source PowerPoint slides '+sourceSlides+'.\n\n'+notes},extra));
   }
+  function exercise(activity,name,minutes,tasks,question,sourceSlides,notes) {
+    scene('Exercise: '+name,['Switch to the interactive exercise'],d=>{
+      title(d,'Switch to the interactive');
+      d.text('exercise-name',80,200,name+' · '+minutes+' minutes',40,P.green,'start',600);
+      tasks.forEach((task,i)=>d.text('exercise-task-'+i,80,300+i*52,task,31,P.ink,'start'));
+      d.text('exercise-discussion',80,455,'Return ready to explain:',28,P.muted,'start');
+      d.text('exercise-question',80,505,question,33,P.green,'start');
+      d.text('exercise-link-hint',80,145,'Open this exercise with ↗ below',27,P.muted,'start');
+    },'Pause the lecture and ask students to switch to this activity on their own screens. The green ↗ toolbar link opens the correct exercise in a separate tab. Allow approximately '+minutes+' minutes, then bring students back to discuss the displayed question. Reset the activity first if it was used earlier.\n\n'+notes,sourceSlides,{kind:'activity',activity,activityBreak:true,minutes});
+  }
   const EMPLOYEES=[['1','Alice','26'],['2','Bob','56'],['3','Alice','56']];
   const JOBS=[['J01','Chef'],['J02','Waiter'],['J03','Bartender']];
   const ASSIGNMENTS=[['1','J01'],['1','J02'],['2','J02'],['2','J03'],['3','J01']];
@@ -136,6 +146,11 @@
     if(s===2)table(d,'joined',360,395,[225,335],[['name','home_state'],['Alice','Michigan']],{rowHeight:57,fontSize:32});
   },'Before teaching JOIN syntax, trace one matching pair. Alice 1 has state_code 26 and the states table maps 26 to Michigan. The query combines selected columns from matching rows. A foreign-key constraint can protect the relationship, but the JOIN operator itself does not require a declared foreign key. If several rows match a join condition, the result can contain several combinations. A relational join does not permanently glue the underlying tables together.', '16, 22',{activity:'keys',minutes:2,sources:[MYSQL+'join.html']});
 
+  exercise('keys','Keys & joins',3,
+    ['Try an orphan with the foreign key on, then off.','Compare INNER JOIN and LEFT JOIN.'],
+    'Which join keeps the orphan?','21–22',
+    'Choose Orphan maker and try INSERT with enforcement enabled: the model rejects it. Disable enforcement and try again, then compare the join types. LEFT JOIN keeps the item with NULL maker fields; INNER JOIN omits the unmatched item. Return to the lecture to connect database rules with transaction boundaries.');
+
   scene('A transaction',['Before','Pending changes','Commit','Alternative: rollback'],(d,s)=>{
     title(d,'A transaction');const values=(s===1||s===2)?[90,60]:[100,50];
     box(d,'account-a',150,225,360,170,'Account A',true,P.blue,34);box(d,'account-b',770,225,360,170,'Account B',true,P.green,34);
@@ -148,6 +163,11 @@
     const labels=[['All changes','or none'],['Declared rules','remain satisfied'],['Concurrent work','controlled visibility'],['Committed result','survives failures']][s];
     box(d,'left',170,345,400,95,labels[0],true,P.blue,32);box(d,'right',710,345,400,95,labels[1],true,P.green,32);d.arrow('property',590,392,690,392,P.green,4);
   },'Atomicity groups all changes into one outcome. Consistency means transactions preserve declared invariants when the transaction logic and constraints enforce them; the database does not know every real-world rule automatically. Isolation controls how concurrent transactions observe and affect one another, with different guarantees at different isolation levels. Durability means committed changes persist under the system’s stated failure model and durability configuration. The source mentions money, clinical records, inventory, and regulated records as examples where correctness matters. Do not translate ACID into “no possible interference or data loss under every event.”', '23',{activity:'transactions',minutes:3,sources:['https://dev.mysql.com/doc/refman/8.0/en/mysql-acid.html',MYSQL+'innodb-transaction-isolation-levels.html']});
+
+  exercise('transactions','Transactions',3,
+    ['Enable credit failure. Begin, debit, then credit.'],
+    'Why do committed balances stay unchanged?','23',
+    'Enable the simulated credit failure before BEGIN. Students should see the pending debit only in the private view. The failed credit causes this application model to roll back the entire transfer, preserving both committed balances. An arbitrary SQL error does not necessarily roll back the whole transaction by itself. Resume with how table design prevents inconsistent repeated facts.');
 
   scene('Normalization',['Repeated facts','Dependencies','Separate responsibilities'],(d,s)=>{
     flow(d,['1NF','2NF','3NF'],s,300);text(d,'rule',640,470,['One value per cell','Depend on the whole key','Separate transitive dependencies'][s],34,P.green);
@@ -197,6 +217,11 @@
     if(s>=1)d.arrow('lookup',590,322,765,322,P.green,4);
     if(s===2)text(d,'update',640,510,'State names live in one table',32,P.green);
   },'Move the state-code/name mapping to States and keep employees.state_code as a foreign key. Jobs and Assignments from the previous step remain part of the design, yielding four tables overall. Employee 1 maps to Michigan; employee 2 and the distinct employee 3 map to Wyoming. A state-name correction happens in the lookup table rather than every employee or assignment row. This example reaches 3NF under its stated candidate keys and dependencies. Normalization does not remove every repeated value: foreign-key values intentionally repeat to represent relationships.', '29',{activity:'normalization',minutes:3});
+
+  exercise('normalization','Normalization',4,
+    ['In 1NF, update one Alice #1 row.','Repeat the move in 3NF.'],
+    'Why is Alice #3 unchanged?','26–29',
+    'In 1NF, update only one assignment row for employee 1 to expose contradictory home states. Switching normal forms resets the move; in 3NF, update employee 1 once and inspect the joined facts. Alice #3 has a different employee_id and is a different person. Ask which repeated employee facts disappeared before returning to normalization tradeoffs.');
 
   scene('Normalization tradeoffs',['Fewer repeated facts','Read workload','Measured denormalization'],(d,s)=>{
     title(d,'Normalization tradeoffs');
@@ -269,6 +294,11 @@
     title(d,'SQL prediction practice');code(d,'question',["SELECT employee_id FROM employees","WHERE name = 'Alice'","ORDER BY employee_id LIMIT 1;"],90,195,31,67);
     text(d,'answer',640,465,s===0?'Which identifier appears?':s===1?'1':'The name matches two rows; ordering selects one.',s===2?29:38,s?P.green:P.ink);
   },'Use this as the live SQL demonstration handoff. Ask for a prediction and a reason before running the statement against the complete three-employee dataset. The answer is employee_id 1: two names match, ordering puts 1 before 3, and LIMIT keeps one row. Change one clause at a time so learners can explain the effect. The source alternates between demo/06-sql and demo/05-sql paths; use the companion and the instructor’s current course checkout rather than silently asserting which old path is authoritative.', '35',{kind:'activity',activity:'queries',minutes:4});
+
+  exercise('queries','SQL query playground',4,
+    ['Run JOIN, then add before ORDER BY:','WHERE e.employee_id = 1'],
+    'Why does one employee produce two rows?','35–36',
+    'Load the Relate · JOIN example in the SQLite playground. Predict the output before running it. Add WHERE e.employee_id = 1 on a new line before ORDER BY and run again. Employee 1 has two job assignments, so the result has two rows. Return to the lecture to see Python send SQL and values through a driver.');
 
   scene('Python and the database',['A driver','SQL and values','Rows back to Python'],(d,s)=>{
     title(d,'Python and the database');flow(d,['Python','Connector','MySQL'],s,260);
@@ -345,6 +375,11 @@
     if(s>=1)text(d,'transform',640,510,'Parse · validate · assign stable keys',30,P.green);
     if(s===2){box(d,'users',875,395,145,80,'Users',true,P.blue,27);box(d,'posts',1040,395,145,80,'Posts',true,P.green,27);}
   },'The source’s data engineering diagram extracts a JSON source, transforms it in process.py, and loads two tables in an AWS RDS SQL database. Preserve the same data flow and make the relationship explicit. Parse and validate before loading, preserve or construct stable identifiers, and load parent rows before dependent rows when foreign keys require them. Use parameterized statements and a transaction boundary appropriate to the batch. Decide what a repeated load should do so retries do not create accidental duplicate records. The ETL activity lets students vary valid/invalid records and see the effect on related tables.', '51',{activity:'etl',minutes:4});
+
+  exercise('etl','JSON → SQL',4,
+    ['Inspect rejected records. Load the sample twice.'],
+    'Why are only two rows stored?','51',
+    'Inspect the accepted preview and rejected records before loading. The first load commits two accepted employees. The second load conflicts with stored primary keys and rolls back the entire attempted batch, leaving the original two stored rows. Return to the course data engineering exercise and discuss the chosen behavior for repeated loads.');
 
   scene('Hands-on data engineering',['Schema and queries','An ETL script','A supported workspace'],(d,s)=>{
     title(d,'Hands-on data engineering');
