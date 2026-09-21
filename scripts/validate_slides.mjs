@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Offline checks for Lecture 04. Run from any directory with Node.js 20+.
+// Offline checks for the visual lecture decks. Run from any directory with Node.js 20+.
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
@@ -10,10 +10,12 @@ const allowMissingLinks = process.argv.includes('--allow-missing-links');
 const unknownArgs = process.argv.slice(2).filter(arg => arg !== '--allow-missing-links');
 const errors = [];
 const warnings = [];
-const activities = new Set(['pipeline', 'path', 'streams', 'control', 'venv', 'environments']);
+const lectures = [
+  {id:4,sourceSlideCount:57,activities:['pipeline','path','streams','control','venv','environments']},
+  {id:5,sourceSlideCount:54,activities:['keys','normalization','queries','transactions','etl']}
+];
 const wordLimit = 45;
 const definitionLimit = 18;
-const sourceSlideCount = 57;
 const stats = { scenes: 0, builds: 0, maxWords: 0, minutes: 0, htmlFiles: 0, localLinks: 0 };
 const fail = (label, message) => errors.push(`${label}: ${message}`);
 const words = value => String(value ?? '').match(/\S+/gu)?.length ?? 0;
@@ -107,9 +109,11 @@ function checkDrawing(items, label, knownKeys) {
   stats.builds++;
 }
 
-function validateDeck() {
+function validateDeck({id,sourceSlideCount,activities:activityIds}) {
+  const activities = new Set(activityIds);
+  const padded = String(id).padStart(2, '0');
   const context = vm.createContext({ window: {}, console });
-  for (const relative of ['slides/_shared/visuals.js', 'slides/decks/lecture-04.js']) {
+  for (const relative of ['slides/_shared/visuals.js', `slides/decks/lecture-${padded}.js`]) {
     const filename = path.join(root, relative);
     if (!fs.existsSync(filename)) return fail('Deck', `missing ${relative}`);
     try {
@@ -118,9 +122,9 @@ function validateDeck() {
       return fail(relative, `could not load: ${error.message}`);
     }
   }
-  const deck = context.window.COURSE_DECKS?.[4];
-  if (!deck) return fail('Deck', 'window.COURSE_DECKS[4] is missing');
-  if (deck.id !== 4) fail('Deck', `expected id 4, received ${JSON.stringify(deck.id)}`);
+  const deck = context.window.COURSE_DECKS?.[id];
+  if (!deck) return fail('Deck', `window.COURSE_DECKS[${id}] is missing`);
+  if (deck.id !== id) fail('Deck', `expected id ${id}, received ${JSON.stringify(deck.id)}`);
   if (!nonempty(deck.title)) fail('Deck', 'title is missing');
   if (!Array.isArray(deck.scenes) || !deck.scenes.length) return fail('Deck', 'scenes must be a nonempty array');
   if (deck.source !== undefined) checkSource(deck.source, 'Deck source');
@@ -128,7 +132,7 @@ function validateDeck() {
   const covered = new Set();
   const hasSourceSlides = deck.scenes.some(sc => own(sc, 'sourceSlides'));
   for (const [index, sc] of deck.scenes.entries()) {
-    const label = `Slide ${index + 1} ${JSON.stringify(sc.title ?? '')}`;
+    const label = `Lecture ${padded}, slide ${index + 1} ${JSON.stringify(sc.title ?? '')}`;
     stats.scenes++;
     if (!nonempty(sc.id) || /\s/.test(sc.id)) fail(label, 'scene id must be a nonempty stable string without whitespace');
     if (ids.has(sc.id)) fail(label, `duplicate scene id ${JSON.stringify(sc.id)}`);
@@ -236,9 +240,13 @@ function checkHtml(directory) {
   }
 }
 
-validateDeck();
+for (const lecture of lectures) {
+  const before={...stats};
+  stats.maxWords=0;
+  validateDeck(lecture);
+  console.log(`Lecture ${String(lecture.id).padStart(2,'0')} · ${stats.scenes-before.scenes} scenes · ${stats.builds-before.builds} builds · ${stats.minutes-before.minutes} planned minutes · maximum ${stats.maxWords}/${wordLimit} visible words`);
+}
 checkHtml(root);
-console.log(`Lecture 04 · ${stats.scenes} scenes · ${stats.builds} builds · ${stats.minutes} planned minutes · maximum ${stats.maxWords}/${wordLimit} visible words`);
 console.log(`${stats.htmlFiles} HTML files · ${stats.localLinks} local links checked · source URLs checked without network requests`);
 for (const warning of warnings) console.warn(`PENDING ${warning}`);
 for (const error of errors) console.error(`ERROR ${error}`);

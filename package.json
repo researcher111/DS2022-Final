@@ -5,8 +5,11 @@
   "description": "DS 2022 visual lecture slides and student interactive diagrams",
   "scripts": {
     "check": "node scripts/validate_slides.mjs",
-    "test": "node scripts/validate_slides.mjs && node --test interactives/lecture-04/*.test.mjs",
-    "serve": "python3 -m http.server 8000"
+    "test": "node scripts/validate_slides.mjs && node --test interactives/lecture-*/*.test.mjs",
+    "serve": "python3 -m http.server 8000",
+    "test:python": "python3 -m unittest discover -s examples/lecture-05 -p 'test_*.py'"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

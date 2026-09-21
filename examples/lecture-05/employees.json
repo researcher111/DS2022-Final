@@ -1,0 +1,7 @@
+[
+  {"employee_id": "4", "name": "  Cara  ", "state": "MI"},
+  {"employee_id": 5, "name": "O'Neil", "state": "VA"},
+  {"employee_id": 4, "name": "Duplicate Cara", "state": "WY"},
+  {"employee_id": 6, "name": "", "state": "WY"},
+  {"employee_id": 7, "name": "Dev", "state": "unknown"}
+]
