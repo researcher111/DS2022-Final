@@ -245,22 +245,42 @@
     "context": "Transaction visibility still applies when a view is queried. An ordinary view is not an independent snapshot or an automatic speed improvement; a materialized view is a separate feature where supported."
   }, '19',{minutes:2,sources:[MYSQL+'create-view.html']});
 
-  scene('Objects and rows',['An object graph','Relational rows','A mapping layer'],(d,s)=>{
-    title(d,'Objects and rows');box(d,'object',80,215,300,90,'Employee object',true,P.blue,31);box(d,'jobs',95,395,270,65,'jobs: [...]',true,P.blue,30);d.arrow('object-link',230,320,230,380,P.blue,3);
-    table(d,'row',865,230,[125,180],[['id','name'],['1','Alice']],{rowHeight:64,fontSize:30});
-    if(s>=1)d.arrow('mapping',395,275,835,295,P.green,4);
-    if(s===2)box(d,'orm',485,360,270,80,'ORM',true,P.green,34);
+  scene('Objects and rows',['An object graph','Relational rows','A mapping layer','Load an employee object','Change the object in memory','Commit the change'],(d,s)=>{
+    if(s<3){
+      title(d,'Objects and rows');box(d,'object',80,215,300,90,'Employee object',true,P.blue,31);box(d,'jobs',95,395,270,65,'jobs: [...]',true,P.blue,30);d.arrow('object-link',230,320,230,380,P.blue,3);
+      table(d,'row',865,230,[125,180],[['id','name'],['1','Alice']],{rowHeight:64,fontSize:30});
+      if(s>=1)d.arrow('mapping',395,275,835,295,P.green,4);
+      if(s===2){box(d,'orm',485,360,270,80,'ORM',true,P.green,34);text(d,'orm-name',640,510,'Object-relational mapper',30,P.green);}
+      return;
+    }
+    title(d,'ORM pseudocode');
+    d.text('orm-code-label',80,165,'Python-like pseudocode',28,P.muted,'start');
+    const lines=['employee = orm.get(Employee, 1)','employee.state_code = 56','orm.commit()'];
+    code(d,'orm-code',lines.slice(0,s-2),80,225,27,48,s-3,535);
+    d.text('orm-sql-label',720,165,'Illustrative SQL',28,P.muted,'start');
+    if(s===3)code(d,'orm-sql',['SELECT * FROM employees','WHERE employee_id = 1;'],720,225,27,48,-1,475);
+    else if(s===4)d.text('orm-no-sql',720,225,'No UPDATE yet',30,P.muted,'start');
+    else code(d,'orm-sql',['UPDATE employees','SET state_code = 56','WHERE employee_id = 1;','COMMIT;'],720,225,27,48,-1,475);
+    d.text('orm-memory-label',80,435,'Object in memory',28,P.blue,'start');
+    code(d,'orm-memory',['employee_id: 1','name: "Alice"','state_code: '+(s===3?'26':'56')],80,490,28,46,s===4?2:-1,535);
+    d.text('orm-database-label',700,435,'employees table',28,P.green,'start');
+    table(d,'orm-database',700,475,[185,120,190],[['employee_id','name','state_code'],['1','Alice',s===5?'56':'26']],{rowHeight:56,fontSize:27,highlightRows:s===5?[1]:[]});
+    if(s===3)d.arrow('orm-transfer',680,530,625,530,P.blue,3);
+    if(s===5)d.arrow('orm-transfer',625,530,680,530,P.green,3);
   },{
-    "idea": "Programs and relational databases represent related information differently, so data must be mapped between them.",
+    "idea": "An ORM maps database rows to program objects and turns saved object changes into SQL operations.",
     "builds": [
       "Point to Employee object and its jobs list, then to the row containing 1 and Alice. Explain that an object can hold references and collections while a row contains values in declared columns.",
       "Follow the mapping arrow from the object toward the table. Ask where the jobs collection would go and how the program could reconnect those rows to this employee.",
-      "Point to ORM and expand the name: object-relational mapper. Say that it helps translate between objects and database operations, but we still need to understand the tables, relationships, and queries it uses."
+      "Read ORM as object-relational mapper. It maps object fields and relationships to database columns and related rows. Say that the next steps show a small example using employee 1, Alice.",
+      "Read employee = orm.get(Employee, 1). Employee is the mapped class, 1 is the employee’s identifier, and employee is the returned object. Follow the SELECT to Alice’s row, then the arrow back to the object in memory. Both show state_code 26.",
+      "Read employee.state_code = 56 and point to the changed object field. The stored row still shows 26: this assignment changes memory, and our example has not sent an UPDATE yet. Ask students which value is currently stored.",
+      "Read orm.commit(), then follow the UPDATE and COMMIT on the right. In this example, the ORM sends the pending change and commits the transaction. The stored row now has state_code 56, while employee_id 1 and the name Alice stay the same."
     ],
-    "question": "What does an ORM still need to know to store an employee’s jobs?",
-    "answer": "It needs the table structure, identifiers, and relationship rules that connect the employee to the job or assignment rows.",
-    "context": "This mapping difficulty is often called impedance mismatch. SQLAlchemy, Django ORM, and Peewee are examples of mapping tools. Nonrelational databases can also require mapping, and an ORM does not remove query costs or database-design decisions."
-  }, '20, 38',{minutes:2,sources:['https://docs.sqlalchemy.org/en/20/orm/quickstart.html']});
+    "question": "After assigning employee.state_code = 56, has this example changed the stored row yet?",
+    "answer": "No. The object has changed in memory. In this example, orm.commit() sends the pending UPDATE and commits it, so the stored row changes from 26 to 56.",
+    "context": "The Python-like calls are teaching pseudocode, not a particular library’s API. Assume Employee is already mapped to employees, employee 1 exists, and the ORM opens a transaction and tracks this object’s changes. This example sends the pending UPDATE during commit; real libraries can flush earlier, including before queries. SQL uses literal values for readability; real ORM operations normally bind parameters. State 56 exists, and database constraints still apply. Employee 3 is the other Alice and remains unchanged because the update uses employee_id 1. Mapping a jobs collection also requires identifiers and relationship rules. SQLAlchemy, Django ORM, and Peewee are examples; ORMs do not remove query costs or database-design decisions."
+  }, '20, 38',{minutes:4,sources:['https://docs.sqlalchemy.org/en/20/orm/quickstart.html']});
 
   scene('Primary key',['A unique identifier','A repeated name','A rejected duplicate key'],(d,s)=>{
     table(d,'pk',200,245,[260,320,300],[['employee_id','name','state_code'],...EMPLOYEES],{rowHeight:62,fontSize:31,highlightCols:[0],highlightRows:s===1?[1,3]:[]});
