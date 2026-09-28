@@ -32,6 +32,8 @@ Annotations save per slide in this browser's local storage. They are not committ
 
 The ↗ toolbar link opens the current topic's activity, or the activity gallery when no specific activity applies. Student activity URLs are independent of slide navigation. Each activity also has a copy-link control. Scripting and concept activities are classroom simulations. The SQL query playground runs real SQLite locally in a browser worker. It does not connect to MySQL or a cloud database; resetting the activity restores its synthetic data.
 
+Each activity starts with one short task and a prepared example. **Explore more** reveals extra controls and explanations without resetting the current experiment. Use the initial task during class, then open the extra options for follow-up practice.
+
 ## Direct student links
 
 | Activity | Link |

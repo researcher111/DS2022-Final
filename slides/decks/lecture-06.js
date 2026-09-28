@@ -212,10 +212,10 @@
 
   exercise('json','JSON paths',5,['Inspect $.phones[1].number.','Compare $.phones[2].number.'],'How do null and missing differ?','13',{
     idea:'Trace a nested lookup one container at a time before checking its result.',
-    builds:['Open JSON paths with the green ↗ link and allow five minutes. Reset, inspect the phones array, then enter $.phones[1].number and select Inspect; repeat with $.phones[2].number. Return ready to explain the zero-based indexes and why an explicit null differs from a missing path.'],
+    builds:['Open JSON paths with the green ↗ link and allow five minutes. Compare the prepared second-phone and third-phone lookups. Point to each path and its result, then return ready to explain why an explicit null differs from a missing path.'],
     question:'How do the results at phones[1].number and phones[2].number differ in the starting document?',
     answer:'The first path reaches an explicitly stored null; the second does not exist because the array has no item at index 2.',
-    context:'The direct activity is a browser simulation. The source also points students to the course repository’s JSON practice; use the current companion and repository instructions for that exercise.'
+    context:'The browser uses a real JSON parser. Explore more allows custom paths and source edits. The source also points students to the course repository’s JSON practice; use the current companion and repository instructions for that exercise.'
   });
 
   scene('Four NoSQL families',['Key–value','Document','Wide-column','Graph'],(d,s)=>{
@@ -295,7 +295,7 @@
 
   exercise('graph','Follow relationships',5,['Find Maya → Rowan.','Follow arrow directions only.'],'Why did the path disappear?','21',{
     idea:'A graph query’s starting point and direction rules determine which paths it can follow.',
-    builds:['Open Follow relationships with the green ↗ link and allow five minutes. Reset with Maya as the start and Rowan as the destination, then select Find shortest path; to inspect individual steps afterward, select Restart search and then Step search. Turn on Follow arrow directions only and search again, then return ready to explain why the path disappeared.'],
+    builds:['Open Follow relationships with the green ↗ link and allow five minutes. Show the prepared path from Maya to Rowan. Turn on Follow arrow directions only and show the path again. Return ready to explain why the same nodes no longer connect in that direction.'],
     question:'Why does following arrow directions make Rowan unreachable from Maya in this graph?',
     answer:'The READ and WROTE edges point into books, so following those arrows from a reader reaches a book but cannot leave it to reach an author.',
     context:'The activity is a small graph simulation. Treat its edge directions and relationship rules as part of that particular model.'
@@ -459,10 +459,10 @@
 
   exercise('modeling','Embed or reference',6,['Update one embedded author copy.','Compare shared-author updates.'],'Which copies must change?','34',{
     idea:'A modeling choice changes both the work required to read data and the work required to update it.',
-    builds:['Open Embed or reference with the green ↗ link and allow six minutes. Reset to Embedded copy, edit the biography, select Update book_001’s author copy, and compare the two books; then select Update both author copies. Switch to One shared author, which resets the data, and select Update the shared author; return ready to identify which stored copies must change.'],
+    builds:['Open Embed or reference with the green ↗ link and allow six minutes. Apply the prepared biography change to one embedded author copy and compare the two books. Switch to a shared reference, which resets the comparison, and apply the same change. Return ready to explain which stored copies must change.'],
     question:'What update risk appears when a shared fact is copied into several documents?',
     answer:'Every copy must be kept consistent; changing only one can leave the documents disagreeing.',
-    context:'The simulation makes a small storage choice visible. A production decision also needs expected reads, write frequency, document growth, validation, and failure handling.'
+    context:'Explore more includes custom biographies and growing review lists. A production decision also needs expected reads, write frequency, document growth, validation, and failure handling.'
   });
 
   scene('Create a document',['Choose the database','Insert one document','Observe the stored record'],(d,s)=>{
@@ -512,12 +512,12 @@
     context:'The sample book has no reviews in this teaching sequence. A destructive operation should always use an intentional filter in the approved sandbox. The displayed code is inert. '+MONGO+'crud/'
   },'35',{activity:'documents',minutes:2});
 
-  exercise('documents','Document operations',7,['Predict each filter’s matches.','Create, read, update, and delete.'],'Which fields actually changed?','35',{
-    idea:'Inspect the matched documents and the resulting state to distinguish each CRUD operation.',
-    builds:['Open Document operations with the green ↗ link and allow seven minutes. Reset, choose examples from the Load an example menu, predict their matches or effects, and select the corresponding Run button; choose Find · all documents and run it to inspect the stored state afterward. For the update example, return ready to name the book selected and the price field changed by $set.'],
-    question:'What evidence distinguishes a read from an update?',
-    answer:'A read returns matching values without changing stored documents; an update changes the selected stored fields, which a later read can reveal.',
-    context:'The browser activity simulates a small subset of MongoDB behavior. It is independent of Atlas and does not run arbitrary MongoDB commands.'
+  exercise('documents','Document operations',4,['Find Jane Austen’s books.','Choose another author and compare.'],'Did finding books change them?','35',{
+    idea:'A filter selects matching documents without changing the stored collection.',
+    builds:['Open Document operations with the green ↗ link and allow four minutes. Find Jane Austen’s books, then choose another author and find again. Compare the filter with the returned titles. Return ready to explain whether a read changed the stored books.'],
+    question:'Did changing the author filter change the stored books?',
+    answer:'No. It changed which documents the read returned; the stored collection stayed the same.',
+    context:'Explore more includes editable filters and insert, update, and delete examples. The browser simulates a small subset of MongoDB behavior; it does not connect to Atlas or run arbitrary MongoDB commands.'
   });
 
   scene('MongoDB tools',['Managed service','Interactive clients','Python programs'],(d,s)=>{
@@ -610,12 +610,12 @@
     context:'MongoDB secondaries replicate and apply the oplog asynchronously. Read preference, read concern, write concern, and sessions affect available guarantees; this animation does not model all combinations or promise a maximum lag. '+MONGO+'core/replica-set-sync/'
   },'38',{activity:'replication',minutes:4});
 
-  exercise('replication','Observe replication lag',6,['Partition A–B; write twice at A.','Deliver, read B, restore, deliver again.'],'What changed without another write?','38',{
+  exercise('replication','Observe replication lag',4,['Write a new value at A.','Compare A and B, then deliver the update.'],'Why did B change later?','38',{
     idea:'Separate a write from replication delivery to see why two permitted reads can disagree.',
-    builds:['Open Observe replication lag with the green ↗ link and allow six minutes. Reset, partition A–B, and write two different store-hours values at primary A; select Deliver all available messages, then select B and Read. Restore A–B, deliver again, and read B again; return ready to explain what changed without another application write.'],
+    builds:['Open Observe replication lag with the green ↗ link and allow four minutes. Write the prepared value at A and compare the two copies before delivering it. Deliver the waiting update to B. Return ready to explain why B changed without another application write.'],
     question:'Why can the secondary change after delivery even when the client makes no new write?',
     answer:'It applies an earlier queued update, so background replication changes the copy’s state.',
-    context:'The browser simulation makes delivery explicit for learning. Real systems have background replication, failure modes, and configurable acknowledgment and read guarantees.'
+    context:'Explore more adds partitions, another replica, and explicit reads. The simulation makes delivery manual for learning. Real systems have background replication, failure modes, and configurable acknowledgment and read guarantees.'
   });
 
   scene('WORM retention',['Write once','Protect during retention','Separate verification'],(d,s)=>{

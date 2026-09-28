@@ -13,3 +13,59 @@
 @media(max-width:600px){.venv-map{grid-template-columns:1fr;gap:16px}.venv-base{padding-top:0}.venv-link{padding:12px 0}.venv-project{padding:14px}.venv-project-heading{align-items:flex-start}.venv-diagram-panel .panel-head{flex-wrap:wrap}.venv-probe .panel-head{flex-wrap:wrap}.venv-shell{padding-bottom:0}}
 .venv-sample-file{margin-bottom:16px;border:1px solid #afbcad;border-radius:8px;background:#fffef9;overflow:hidden}.venv-sample-header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-bottom:1px solid var(--rule)}.venv-sample-header button{display:flex;flex-direction:column;gap:3px;align-items:flex-start;text-align:left;background:transparent;border:0;padding:4px 6px}.venv-sample-header button code{font-size:15px;font-weight:600}.venv-sample-header button span{font-size:10px;color:var(--muted)}.venv-sample-header a{font-size:11px;flex-shrink:0;padding:12px 0}.venv-sample-file pre{padding:18px 16px 10px;font-size:16px;line-height:1.7}.venv-sample-file pre code{font-size:inherit}.venv-import-line{background:#dce9df;color:#20543e;font-weight:650;padding:3px 5px;margin-left:-5px;border-radius:4px}.venv-sample-file p{font-size:12px;line-height:1.6;color:var(--muted);margin:0;padding:8px 16px 16px}
 @media(max-width:600px){.venv-sample-file pre{font-size:14px}.venv-sample-header{padding:8px 10px}.venv-sample-header button span{font-size:9px}}
+
+/* Lecture 04 guided defaults. Other lectures import this file: keep every rule scoped. */
+body[data-lecture="4"] main{padding-top:26px}
+body[data-lecture="4"] .activity-heading{margin-bottom:12px;align-items:center}
+body[data-lecture="4"] .activity-heading h1{font-size:clamp(30px,3.6vw,43px);margin:8px 0}
+body[data-lecture="4"] .activity-tabs{margin:14px 0;gap:6px}
+body[data-lecture="4"] .activity-tabs a{padding:7px 11px}
+body[data-lecture="4"] .prompt{margin:0 0 20px;font-size:16px;padding:12px 17px}
+body[data-lecture="4"] .workspace{gap:20px}
+body[data-lecture="4"] #controls{padding:20px}
+body[data-lecture="4"] #controls h2{font-size:18px;margin-bottom:16px}
+body[data-lecture="4"] .primary-choice{font-size:15px;margin-top:0;align-items:flex-start}
+body[data-lecture="4"] .guided-actions{display:flex;flex-wrap:wrap;gap:8px}
+body[data-lecture="4"] .guided-progress{font-size:13px;color:var(--muted);margin-bottom:14px}
+body[data-lecture="4"] .explore{border-top:1px solid var(--rule);padding-top:14px;margin-top:18px;font-size:13px;line-height:1.6}
+body[data-lecture="4"] .explore>summary{cursor:pointer;font-weight:600;color:var(--accent);min-height:28px;line-height:1.5}
+body[data-lecture="4"] .explore[open]>summary{margin-bottom:18px}
+body[data-lecture="4"] .explore>p{margin:14px 0}
+body[data-lecture="4"] .explore .field{margin:16px 0}
+body[data-lecture="4"] .explore .control-divider{margin:18px 0}
+body[data-lecture="4"] .setup-explore{margin-top:0}
+body[data-lecture="4"] .setup-explore>section{margin-top:20px}
+body[data-lecture="4"] .setup-explore .panel{padding:0;border:0;background:transparent}
+body[data-lecture="4"] .primary-result{padding:22px}
+body[data-lecture="4"] .primary-result .panel-head{margin-bottom:16px}
+body[data-lecture="4"] .primary-result .flow{margin-bottom:18px}
+body[data-lecture="4"] .main-output{margin-top:18px}
+body[data-lecture="4"] .result-label{margin:22px 0 12px}
+body[data-lecture="4"] .path-option{border-bottom:1px solid var(--rule);padding:12px 0}
+body[data-lecture="4"] .path-option>code{display:block;margin-bottom:8px;overflow-wrap:anywhere}
+body[data-lecture="4"] .path-option .dir-actions{max-width:none;justify-content:flex-start}
+body[data-lecture="4"] .path-option .small-label{font-size:11px}
+body[data-lecture="4"] #inheritance-preview .process-box{padding:12px}
+body[data-lecture="4"] .primary-result .package-box{min-height:86px}
+body[data-lecture="4"] .primary-result .env-project{padding:16px}
+body[data-lecture="4"] .primary-result .env-project p{margin-bottom:10px}
+body[data-lecture="4"] .venv-current-command{padding:13px 16px}
+body[data-lecture="4"] .venv-map{grid-template-columns:minmax(155px,.7fr) minmax(0,1.7fr);gap:16px;margin:18px 0}
+body[data-lecture="4"] .venv-base{padding-top:28px}
+body[data-lecture="4"] .venv-project{padding:13px}
+body[data-lecture="4"] .venv-project-heading{margin-bottom:11px}
+body[data-lecture="4"] .venv-node{padding:11px;gap:4px}
+body[data-lecture="4"] .venv-node strong{font-size:17px}
+body[data-lecture="4"] .venv-sample-file{margin-bottom:12px}
+body[data-lecture="4"] .venv-sample-header{padding:4px 10px}
+body[data-lecture="4"] .venv-sample-header button{min-height:34px}
+body[data-lecture="4"] .venv-sample-file pre{padding:12px;font-size:14px;line-height:1.55}
+body[data-lecture="4"] .venv-boundary{grid-template-columns:repeat(2,minmax(0,1fr));padding:9px;gap:8px}
+body[data-lecture="4"] .venv-boundary>.venv-node:first-child{grid-column:1/-1;padding:2px}
+body[data-lecture="4"] .venv-probe{border-top:1px solid var(--rule);padding-top:16px}
+body[data-lecture="4"] .venv-probe .panel-head{margin-bottom:12px}
+body[data-lecture="4"] .venv-probe .terminal{padding:13px 16px}
+body[data-lecture="4"] .venv-inspector{padding:13px 15px}
+body[data-lecture="4"] .next-activity{font-size:13px;margin:0}
+@media(max-width:760px){body[data-lecture="4"] main{padding-top:22px}body[data-lecture="4"] .activity-heading{display:block}body[data-lecture="4"] .heading-tools{margin-top:12px}body[data-lecture="4"] .workspace{gap:16px}body[data-lecture="4"] .prompt{font-size:15px}body[data-lecture="4"] .primary-result{padding:18px}}
+@media(max-width:600px){body[data-lecture="4"] .venv-map{grid-template-columns:1fr;gap:10px}body[data-lecture="4"] .venv-base{padding-top:0}body[data-lecture="4"] .venv-link{padding:8px 0}body[data-lecture="4"] .venv-node{padding:10px}body[data-lecture="4"] .venv-base .venv-node{display:flex;flex-direction:row;flex-wrap:wrap;gap:7px 14px;align-items:center}}

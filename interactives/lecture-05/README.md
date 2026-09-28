@@ -12,7 +12,7 @@ All data is synthetic teaching data. No database server or remote package CDN is
 
 ## Engine and dialect
 
-The lecture examples use MySQL. The sandbox explicitly uses SQLite and lists differences in its sidebar. The actual engine version comes from `sqlite_version()`. Foreign-key enforcement is enabled for each seeded connection before any transaction. The sandbox displays the current setting if a student changes it. Seed integer IDs use `INT NOT NULL PRIMARY KEY` to require a supplied non-NULL ID, rather than SQLite's auto-assigning `INTEGER PRIMARY KEY` rowid alias.
+The lecture examples use MySQL. The sandbox explicitly uses SQLite; **Explore more** contains dialect differences, schema details, and additional query examples. The actual engine version comes from `sqlite_version()`. Foreign-key enforcement is enabled for each seeded connection before any transaction. The sandbox displays the current setting if a student changes it. Seed integer IDs use `INT NOT NULL PRIMARY KEY` to require a supplied non-NULL ID, rather than SQLite's auto-assigning `INTEGER PRIMARY KEY` rowid alias.
 
 Each SQL statement is parsed and executed by SQLite, not a regular-expression imitation. Output is limited to 200 rows per statement and 50 statements per run. Statements are finalized after use, including errors and capped output. Work runs in a Web Worker; Cancel or an eight-second timeout discards the worker's database. Reset data creates a fresh sample database. Earlier SQL statements can change the database before a later statement fails, as the UI explains.
 

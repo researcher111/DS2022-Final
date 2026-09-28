@@ -332,16 +332,16 @@
   }, '16, 22',{activity:'keys',minutes:2,sources:[MYSQL+'join.html']});
 
   exercise('keys','Keys & joins',3,
-    ['Try an orphan with the foreign key on, then off.','Compare INNER JOIN and LEFT JOIN.'],
-    'Which join keeps the orphan?','21–22',
+    ['Try adding an item with maker 99.','Choose an existing maker and try again.'],
+    'Why was the first insert rejected?','21–22',
     {
-    "idea": "A constraint controls what data may be stored, while a join controls which stored rows appear in a result.",
+    "idea": "A foreign key can reject a row whose referenced maker does not exist.",
     "builds": [
-      "Open the green ↗ toolbar link to Keys & joins and reset the activity if it was used earlier. Give students three minutes to choose Orphan maker, try INSERT with foreign-key enforcement on, then turn enforcement off, try again, and compare INNER JOIN with LEFT JOIN. Return to the slide and ask: Which join keeps the orphan, and what appears in its maker fields?"
+      "Open the green ↗ link and reset the activity. Ask students to try adding the prepared item with maker 99, then choose an existing maker and try again. Give them three minutes to compare the result with the Makers table. Return to the slide and ask why the first insert was rejected."
     ],
-    "question": "Which join keeps the orphan item, and what appears in its maker fields?",
-    "answer": "LEFT JOIN keeps the orphan item and shows NULL for the missing maker fields; INNER JOIN omits that unmatched item.",
-    "context": "With enforcement enabled, the model rejects the orphan insert. Disabling it is a classroom comparison of invalid stored data, not a recommendation for production constraints. The next section considers how related writes can share one transaction."
+    "question": "Why did maker 99 fail while an existing maker succeeded?",
+    "answer": "There is no matching maker 99. The foreign key requires the item’s maker_id to refer to an existing maker.",
+    "context": "For an optional extension, open Explore more, turn foreign-key enforcement off, insert an orphan, and compare INNER JOIN with LEFT JOIN. LEFT JOIN retains the orphan with NULL maker fields. Disabling enforcement is a classroom comparison, not a recommendation for production constraints."
   });
 
   scene('A transaction',['Before','Pending changes','Commit','Alternative: rollback'],(d,s)=>{
@@ -380,16 +380,16 @@
   }, '23',{activity:'transactions',minutes:3,sources:['https://dev.mysql.com/doc/refman/8.0/en/mysql-acid.html',MYSQL+'innodb-transaction-isolation-levels.html']});
 
   exercise('transactions','Transactions',3,
-    ['Enable credit failure. Begin, debit, then credit.'],
-    'Why do committed balances stay unchanged?','23',
+    ['Step through the $25 transfer.','Compare balances before and after COMMIT.'],
+    'When can another reader see the change?','23',
     {
-    "idea": "A failed transfer must discard its private changes before they become committed balances.",
+    "idea": "The transfer’s private changes become visible to another reader when the transaction commits.",
     "builds": [
-      "Open the green ↗ toolbar link to Transactions and reset the activity if it was used earlier. Give students three minutes to enable credit failure before BEGIN, then begin, debit, and attempt the credit while comparing the private and committed balances. Return to the slide and ask: Why do the committed balances stay unchanged?"
+      "Open the green ↗ link and reset the activity. Give students three minutes to use the next-step button through BEGIN, debit, credit, and COMMIT. Pause after the debit and compare the private and committed balances. Return to the slide and ask when another reader can see the transfer."
     ],
-    "question": "Why do the committed balances stay unchanged after the credit fails?",
-    "answer": "The debit was still private, and this application model rolls back the whole transfer when the credit fails, so neither change commits.",
-    "context": "The model makes rollback an application response to the failed credit. An arbitrary SQL error does not necessarily roll back an entire transaction automatically. Next, connect transaction safety to table designs that avoid repeating inconsistent facts."
+    "question": "When do another reader’s balances change?",
+    "answer": "At COMMIT, when both changes become visible together. Before that, this model’s other reader sees the previous committed balances.",
+    "context": "For an optional extension, reset, open Explore more, enable the credit failure, and step through the transfer again. The application explicitly rolls back on failure. An arbitrary SQL error does not necessarily roll back an entire transaction automatically."
   });
 
   scene('Normalization',['Repeated facts','Dependencies','Separate responsibilities'],(d,s)=>{
@@ -779,16 +779,16 @@
   }, '35',{kind:'activity',activity:'queries',minutes:4});
 
   exercise('queries','SQL query playground',4,
-    ['Run JOIN, then add before ORDER BY:','WHERE e.employee_id = 1'],
-    'Why does one employee produce two rows?','35–36',
+    ['Run the starting query. Add before ORDER BY:','WHERE employee_id = 1'],
+    'Which employee remains?','35–36',
     {
-    "idea": "A join can return several rows for one employee when that employee has several assignments.",
+    "idea": "A WHERE condition filters which stored rows appear in the result.",
     "builds": [
-      "Open the green ↗ link and reset the activity if it was used earlier. Give students 4 minutes to run Relate · JOIN, add WHERE e.employee_id = 1 before ORDER BY, predict the result, and run again. Bring the class back to explain why one employee produces two rows."
+      "Open the green ↗ link and reset the activity. Give students four minutes to run the starting SELECT, add WHERE employee_id = 1 before ORDER BY, predict the result, and run again. Bring the class back to name the remaining employee and explain why the other Alice is excluded."
     ],
-    "question": "Why does the filtered join still return two rows?",
-    "answer": "Employee 1 has two job assignments: Chef and Waiter. Each matching assignment contributes a result row.",
-    "context": "The activity runs SQLite locally and needs no database credentials. The WHERE clause belongs after the JOIN clauses and before ORDER BY."
+    "question": "Which employee remains, and why is the other Alice excluded?",
+    "answer": "Alice with employee_id 1 remains. The other Alice has employee_id 3, so her row does not satisfy the condition.",
+    "context": "The activity runs SQLite locally. For an optional extension, open Explore more, load Relate · JOIN, and filter with WHERE e.employee_id = 1 before ORDER BY. That query returns two rows because Alice has two job assignments."
   });
 
   scene('Python and the database',['A driver','SQL and values','Rows back to Python'],(d,s)=>{
@@ -995,12 +995,12 @@
   }, '51',{activity:'etl',minutes:4});
 
   exercise('etl','JSON → SQL',4,
-    ['Inspect rejected records. Load the sample twice.'],
+    ['Load the sample, then load it again.'],
     'Why are only two rows stored?','51',
     {
     "idea": "Validation selects acceptable records, and a transaction controls whether a load is kept.",
     "builds": [
-      "Open the green ↗ link and reset the activity if it was used earlier. Give students 4 minutes to inspect the accepted preview and rejected records, then load the sample twice. Bring them back to explain why only two rows remain stored."
+      "Open the green ↗ link and reset the activity. Give students four minutes to inspect the accepted preview and load the sample twice. Ask them to watch the stored row count after each attempt. Bring them back to explain why only two rows remain stored; use Explore more afterward to inspect the source and rejected records."
     ],
     "question": "Why does the second load leave the database with the same two rows?",
     "answer": "The first load commits two accepted employees. The second load conflicts with their stored primary keys, so the application rolls back that attempted batch and keeps the original rows.",

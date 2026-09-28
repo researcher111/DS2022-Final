@@ -19,6 +19,10 @@ Limit **all visible words per build to 45**, including code, values, diagram lab
 
 Use stable scene IDs. Changing them changes where local annotations appear. Slides must not depend on the state of a separate student activity. Student activities should work from their direct URLs, expose real controls and outputs, explain that they are simulations, and offer reset and copy-link controls.
 
+## Student exercises
+
+Start each activity with one short task above the interactive diagram. Show only the controls needed for that task and keep its result close to the action. Use a small prepared example so students can try the concept immediately. Put alternate scenarios, custom inputs, logs, and detailed explanations under a closed **Explore more** section. Expanding or collapsing it must not reset the experiment. Keep Reset and Copy link available, and retain a brief label distinguishing a teaching model from a real runtime. Slide exercise cues should describe the simple starting task; optional extensions belong in instructor notes.
+
 ## Review
 
 Verify shell quoting, interpreter names, paths, error behavior, and example outputs. Version-dependent tool defaults need an explicit choice or a caveat. Preserve assignment dates as source information, unless the instructor provides an update. Cite primary technical documentation in notes/companion when correcting the lecture.

@@ -5,13 +5,13 @@
 <div class="actions"><a class="button primary" href="../../slides/lecture-06.html">Lecture slides →</a><a class="button" href="../../interactives/lecture-06/index.html">Student activities ↗</a><a class="button" href="../../slides/lecture-06.html?guide=1">Full teaching guide →</a></div>
 <p class="source-note">Adapted from the supplied 45-slide 06-DS2022-NoSQL.pptx by Karsten Siller and Daniel Graham. Both class meetings are included. The slide notes identify source slides, explain each animation step, and provide questions with expected answers.</p>
 
-<h2>Interactive exercises</h2><p>Open each activity directly when the lecture reaches its exercise break. These activities run locally in your browser. JSON parsing is real; database, modeling, graph, and replication behavior use small teaching simulations. They do not connect to MongoDB or require an account.</p>
+<h2>Interactive exercises</h2><p>Start with the short task at the top of each activity. Open <strong>Explore more</strong> when you are ready to try other inputs. Everything runs in your browser: JSON parsing is real, and the database activities are teaching simulations. No MongoDB account is needed.</p>
 <ul class="resource-list">
-<li><a href="../../interactives/lecture-06/index.html?activity=json">01 · JSON structure ↗</a><span>Edit a document and follow keys and array indexes</span></li>
+<li><a href="../../interactives/lecture-06/index.html?activity=json">01 · JSON structure ↗</a><span>Compare a null value with a missing value</span></li>
 <li><a href="../../interactives/lecture-06/index.html?activity=graph">02 · Graph traversal ↗</a><span>Follow relationships between people and books</span></li>
-<li><a href="../../interactives/lecture-06/index.html?activity=modeling">03 · Embedding and references ↗</a><span>Compare reads, copied facts, and updates</span></li>
-<li><a href="../../interactives/lecture-06/index.html?activity=documents">04 · Document queries ↗</a><span>Find, insert, update, and delete sample documents</span></li>
-<li><a href="../../interactives/lecture-06/index.html?activity=replication">05 · Replication lag ↗</a><span>Write a value, read a stale replica, and deliver updates</span></li>
+<li><a href="../../interactives/lecture-06/index.html?activity=modeling">03 · Embedding and references ↗</a><span>Change one biography and compare two books</span></li>
+<li><a href="../../interactives/lecture-06/index.html?activity=documents">04 · Document queries ↗</a><span>Choose an author and find their books</span></li>
+<li><a href="../../interactives/lecture-06/index.html?activity=replication">05 · Replication lag ↗</a><span>Write at A, then deliver the update to B</span></li>
 </ul>
 
 <h2>Hierarchical data formats</h2><p>A flat table repeats a set of columns across rows. Hierarchical data can nest objects and lists. JSON, XML, YAML, and TOML describe structured data using different syntax; choosing a format does not determine when an application validates its schema.</p>
@@ -102,7 +102,7 @@ python query_mongodb.py --author author_001</code></pre>
 
 <h2>Transactions and replicated data</h2><p>ACID describes transaction properties: atomicity groups changes, consistency preserves declared rules, isolation defines permitted concurrent observations, and durability preserves committed results under the system’s guarantees. These properties are not exclusive to relational databases. MongoDB supports atomic single-document updates and multi-document transactions. See <a href="https://www.mongodb.com/docs/manual/core/transactions/">MongoDB transactions</a>.</p>
 <p>BASE is a loose design description: Basically Available, Soft state, Eventually consistent. It is not a certification that ensures speed or uptime. Eventual consistency guarantees convergence once updates stop and communication and delivery continue. The consistency in ACID’s name concerns valid state, while replica consistency concerns what different reads can observe. See Werner Vogels’ explanation of <a href="https://www.allthingsdistributed.com/2008/12/eventually_consistent.html">eventual consistency</a>.</p>
-<p>The replication activity has one writer and delayed copies. Update the store-hours value at A, read B before its pending message arrives, then deliver messages. Disconnect a link to hold updates, reconnect it, and continue delivery. It illustrates lag rather than implementing MongoDB’s replication or a full distributed consensus protocol. Actual guarantees depend on topology, failure handling, and read/write settings. See <a href="https://www.mongodb.com/docs/manual/core/replica-set-secondary-reads/">secondary reads</a>.</p>
+<p>The replication activity starts with two copies. Write a new store-hours value at A, compare it with B, then deliver the update. <strong>Explore more</strong> adds disconnected links, another replica, and explicit reads. This model illustrates lag; actual MongoDB guarantees depend on topology, failure handling, and read/write settings. See <a href="https://www.mongodb.com/docs/manual/core/replica-set-secondary-reads/">secondary reads</a>.</p>
 
 <h2>WORM and retained history</h2><p>Write Once, Read Many storage can prevent changing or deleting protected object versions during a configured retention period or legal hold. Retention may expire, and the exact rules depend on the system. WORM alone does not provide cryptographic verification; a ledger may add a verifiable history. See <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html">S3 Object Lock</a>.</p>
 

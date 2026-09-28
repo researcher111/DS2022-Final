@@ -8,6 +8,8 @@ Serve the repository root with `npm run serve`, then open this folder’s `index
 - `index.html?activity=graph`: bookstore breadth-first search with selectable endpoints, directed/undirected traversal, and a removable relationship.
 - `index.html?activity=replication`: single-writer asynchronous replication with two or three local copies, stepped delivery, and partitions.
 
+Every page starts with one short task and a small prepared example. **Explore more** reveals custom inputs, other operations, and technical details without resetting the experiment. Replication starts with two copies; the third copy and partitions are optional. The document table initially shows only book titles and authors, adding prices when exploring further.
+
 Every page offers **Reset activity** and **Copy activity link**, course/slide/guide navigation, labeled controls, visible focus, and mobile layouts. The common visual styles are imported from `../lecture-04/lab.css`; these activities do not modify the shared stylesheet. All runtime assets are local. After they load, no network connection is needed to use the activities. Documentation links are optional external navigation. Reloading or leaving the page discards its in-memory state.
 
 ## Scope and data
