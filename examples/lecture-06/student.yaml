@@ -1,0 +1,11 @@
+student:
+  name: Alice
+  age: 21
+  courses:
+    - DS2022
+    - CS3240
+  address:
+    city: Charlottesville
+    state: VA
+  active: true
+  advisor: null

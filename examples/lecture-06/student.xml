@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<student>
+  <name>Alice</name>
+  <age>21</age>
+  <courses>
+    <course>DS2022</course>
+    <course>CS3240</course>
+  </courses>
+  <address>
+    <city>Charlottesville</city>
+    <state>VA</state>
+  </address>
+  <active>true</active>
+</student>

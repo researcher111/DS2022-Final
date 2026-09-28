@@ -1,0 +1,10 @@
+# Configuration example, not a complete build configuration.
+[project]
+name = "nosql-practice"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["pymongo"]
+
+[tool.course]
+lecture = 6
+topics = ["JSON", "MongoDB"]

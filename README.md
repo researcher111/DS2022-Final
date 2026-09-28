@@ -10,12 +10,17 @@ Browser-based lectures for **Systems I: Introduction to Computing**, with concis
 - [Lecture companion and code](https://researcher111.github.io/DS2022-Final/lectures/lecture-04/index.html)
 - [Printable teaching guide](https://researcher111.github.io/DS2022-Final/slides/lecture-04.html?guide=1)
 
-The uploaded Scripting and SQL lectures are included. Each spans the class sessions in its source PowerPoint. Add later lectures individually.
+The uploaded Scripting, SQL, and NoSQL lectures are included. Each spans the class sessions in its source PowerPoint. Add later lectures individually.
 
 - [Lecture 05: SQL](https://researcher111.github.io/DS2022-Final/slides/lecture-05.html)
 - [SQL interactive activities](https://researcher111.github.io/DS2022-Final/interactives/lecture-05/index.html)
 - [SQL companion and examples](https://researcher111.github.io/DS2022-Final/lectures/lecture-05/index.html)
 - [SQL teaching guide](https://researcher111.github.io/DS2022-Final/slides/lecture-05.html?guide=1)
+
+- [Lecture 06: NoSQL](https://researcher111.github.io/DS2022-Final/slides/lecture-06.html)
+- [NoSQL interactive activities](https://researcher111.github.io/DS2022-Final/interactives/lecture-06/index.html)
+- [NoSQL companion and MongoDB examples](https://researcher111.github.io/DS2022-Final/lectures/lecture-06/index.html)
+- [NoSQL teaching guide](https://researcher111.github.io/DS2022-Final/slides/lecture-06.html?guide=1)
 
 ## Presenting
 
@@ -45,6 +50,16 @@ The ↗ toolbar link opens the current topic's activity, or the activity gallery
 | SQL query playground | [Open](https://researcher111.github.io/DS2022-Final/interactives/lecture-05/index.html?activity=queries) |
 | Transactions | [Open](https://researcher111.github.io/DS2022-Final/interactives/lecture-05/index.html?activity=transactions) |
 | JSON to SQL ETL | [Open](https://researcher111.github.io/DS2022-Final/interactives/lecture-05/index.html?activity=etl) |
+
+| NoSQL activity | Link |
+| --- | --- |
+| JSON structure | [Open](https://researcher111.github.io/DS2022-Final/interactives/lecture-06/index.html?activity=json) |
+| Graph traversal | [Open](https://researcher111.github.io/DS2022-Final/interactives/lecture-06/index.html?activity=graph) |
+| Embedding and references | [Open](https://researcher111.github.io/DS2022-Final/interactives/lecture-06/index.html?activity=modeling) |
+| Document queries | [Open](https://researcher111.github.io/DS2022-Final/interactives/lecture-06/index.html?activity=documents) |
+| Replication lag | [Open](https://researcher111.github.io/DS2022-Final/interactives/lecture-06/index.html?activity=replication) |
+
+The NoSQL activities are local simulations with explicit limits. The JSON activity uses the browser's JSON parser; the document activity models a small MongoDB query subset and does not run MongoDB. Downloadable mongosh and PyMongo examples connect to a deployment only when students run them with their own connection settings.
 
 ## Run locally
 
@@ -91,6 +106,6 @@ Keep each build to **45 visible words maximum**, counting titles, code, and diag
 
 ## Source and attribution
 
-Lecture content adapts `04-DS2022-Scripting.pptx` and `05-DS2022-SQL.pptx`, supplied by Daniel Graham, with instructors Daniel Graham and Karsten Siller. The original PowerPoints remain outside this repository. Source slide references appear in the notes. Examples use corrected ASCII syntax and documented Bash/Python/SQL behavior. The SQL lecture distinguishes MySQL from the browser’s SQLite runtime and corrects broad claims about scaling, normalization performance, and managed-service licensing. The companion links to official documentation for technical corrections. Assignment dates are identified as source-deck information; Canvas remains the course reference.
+Lecture content adapts `04-DS2022-Scripting.pptx`, `05-DS2022-SQL.pptx`, and `06-DS2022-NoSQL.pptx`, supplied by Daniel Graham, with instructors Daniel Graham and Karsten Siller. The original PowerPoints remain outside this repository. Source slide references appear in the notes. Examples use corrected ASCII syntax and documented Bash/Python/SQL/NoSQL behavior. The SQL lecture distinguishes MySQL from the browser’s SQLite runtime. The NoSQL lecture distinguishes flexible schemas from validation, wide-column from analytical column storage, BSON from JSON, and transaction guarantees from replica consistency. The companions link to official documentation for technical corrections. Assignment dates are identified as source-deck information; Canvas remains the course reference, including the NoSQL deck's conflicting Lab 05 labels.
 
 The slide player, drawing tools, diagram helpers, and visual styles are adapted from Daniel Graham's [AdvanceDatabase](https://github.com/researcher111/AdvanceDatabase) project, specifically the local `AdvanceDatabase-public/slides/_shared` files. DS 2022 uses its own annotation and presenter-channel namespaces, separate student activity links, and lecture-specific timing.
