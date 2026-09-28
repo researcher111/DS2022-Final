@@ -1,20 +1,84 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f7f6f2"><title>NoSQL companion · DS 2022</title><link rel="stylesheet" href="../../assets/course.css"></head><body>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f7f6f2"><title>NoSQL companion · DS 2022</title><meta name="description" content="A 75-minute bookstore lesson with three NoSQL exercises, live essentials, and optional source reference."><link rel="stylesheet" href="../../assets/course.css"><style>.companion details{margin:14px 0;border-top:1px solid var(--line)}.companion summary{padding:14px 0;min-height:44px;cursor:pointer;line-height:1.5;color:var(--green)}.companion summary:focus-visible{outline:3px solid var(--orange);outline-offset:4px}.companion details>p:last-child{margin-bottom:24px}.companion section{scroll-margin-top:24px}.companion details[id]{scroll-margin-top:24px}</style></head><body>
 <header class="site-header"><a class="brand" href="../../index.html">DS <strong>2022</strong><span>Systems I</span></a><nav aria-label="Main navigation"><a href="../../slides/lecture-06.html">Slides</a><a href="../../interactives/lecture-06/index.html">NoSQL activities ↗</a></nav></header>
-<main class="companion"><p class="eyebrow">Lecture 06 / September 29 &amp; October 1, 2026</p><h1>NoSQL</h1><p class="intro">Follow nested data into documents, choose where related facts belong, and explore what happens when database replicas receive an update at different times.</p>
-<div class="actions"><a class="button primary" href="../../slides/lecture-06.html">Lecture slides →</a><a class="button" href="../../interactives/lecture-06/index.html">Student activities ↗</a><a class="button" href="../../slides/lecture-06.html?guide=1">Full teaching guide →</a></div>
-<p class="source-note">Adapted from the supplied 45-slide 06-DS2022-NoSQL.pptx by Karsten Siller and Daniel Graham. Both class meetings are included. The slide notes identify source slides, explain each animation step, and provide questions with expected answers.</p>
+<main class="companion"><p class="eyebrow">Lecture 06 / 75-minute bookstore story</p><h1>NoSQL</h1><p class="intro">Build a bookstore catalog, find its books, decide where an author’s biography belongs, and explain why a database copy might show an older value.</p>
+<div class="actions"><a class="button primary" href="../../slides/lecture-06.html">75-minute lecture →</a><a class="button" href="#live-exercises">Three live exercises ↗</a><a class="button" href="../../slides/lecture-06.html?guide=1">Teaching guide →</a></div>
+<p class="source-note">The 26-scene live lecture is adapted from the supplied 45-slide 06-DS2022-NoSQL.pptx by Karsten Siller and Daniel Graham. The source covers September 29 and October 1, 2026; this presentation follows one 75-minute route. Additional source topics, setup instructions, and original course logistics remain in the reference sections below. Slide notes explain each build and include questions and expected answers.</p>
 
-<h2>Interactive exercises</h2><p>Start with the short task at the top of each activity. Open <strong>Explore more</strong> when you are ready to try other inputs. Everything runs in your browser: JSON parsing is real, and the database activities are teaching simulations. No MongoDB account is needed.</p>
+<section id="route" aria-labelledby="route-title"><h2 id="route-title">The 75-minute route</h2>
 <ul class="resource-list">
-<li><a href="../../interactives/lecture-06/index.html?activity=json">01 · JSON structure ↗</a><span>Compare a null value with a missing value</span></li>
-<li><a href="../../interactives/lecture-06/index.html?activity=graph">02 · Graph traversal ↗</a><span>Follow relationships between people and books</span></li>
-<li><a href="../../interactives/lecture-06/index.html?activity=modeling">03 · Embedding and references ↗</a><span>Change one biography and compare two books</span></li>
-<li><a href="../../interactives/lecture-06/index.html?activity=documents">04 · Document queries ↗</a><span>Choose an author and find their books</span></li>
-<li><a href="../../interactives/lecture-06/index.html?activity=replication">05 · Replication lag ↗</a><span>Write at A, then deliver the update to B</span></li>
-</ul>
+<li><strong>0–24 minutes · Shape the catalog</strong><span>Books, nested objects, arrays, identifiers, collections, and validation</span></li>
+<li><strong>24–38 minutes · Find and update</strong><span>Filters and field changes, including 5 minutes in Find books</span></li>
+<li><strong>38–53 minutes · Choose where facts belong</strong><span>Embedded author copies versus references, including a 5-minute comparison</span></li>
+<li><strong>53–75 minutes · Choose update guarantees</strong><span>Atomicity, a 4-minute replication exercise, discussion, and an exit question</span></li>
+</ul></section>
 
-<h2>Hierarchical data formats</h2><p>A flat table repeats a set of columns across rows. Hierarchical data can nest objects and lists. JSON, XML, YAML, and TOML describe structured data using different syntax; choosing a format does not determine when an application validates its schema.</p>
+<section id="live-exercises" aria-labelledby="live-exercises-title"><h2 id="live-exercises-title">Three live exercises</h2><p>Follow these links when the slides pause for an exercise. Use the prepared task and controls; leave <strong>Explore more</strong> closed during the live lesson. Reset the activity if you have used it before. These browser activities are teaching simulations, so no MongoDB account is needed.</p>
+<ol>
+<li><a href="../../interactives/lecture-06/index.html?activity=documents"><strong>Find books · 5 minutes ↗</strong></a>. Predict Jane Austen’s matches, choose Find books, then try the other author. Return ready to explain whether a filter changes stored documents.</li>
+<li><a href="../../interactives/lecture-06/index.html?activity=modeling"><strong>Embed or reference · 5 minutes ↗</strong></a>. Update one embedded biography, switch to one shared author, and update again. Return ready to explain which stored copies must change. Switching designs starts a fresh comparison.</li>
+<li><a href="../../interactives/lecture-06/index.html?activity=replication"><strong>Let a copy catch up · 4 minutes ↗</strong></a>. Write at A, compare A and B, then deliver the update. Return ready to explain why B changed later.</li>
+</ol></section>
+
+<section id="live-essentials" aria-labelledby="essentials-title"><h2 id="essentials-title">Live essentials</h2><p>The same bookstore connects the examples: a document’s shape determines its queries, shared facts affect updates, and replication affects what readers can see.</p>
+<h3>Start with an embedded author</h3><p>The live catalog and Find books activity keep an <code>author</code> object inside each book. Braces contain an object, arrays hold ordered values, and a dotted field path reaches a nested value. A missing field, a stored <code>null</code>, and an empty array are different states.</p>
+<pre><code>{
+  "_id": "book_001",
+  "title": "Pride and Prejudice",
+  "published_year": 1813,
+  "author": {"name": "Jane Austen"}
+}
+
+db.books.find({"author.name": "Jane Austen"})
+db.books.updateOne(
+  {_id: "book_001"},
+  {$set: {price: 20}}
+)</code></pre>
+<p>The document is JSON; the calls below it are mongosh syntax. The filter reads the embedded name. <code>find</code> returns matches without changing the collection. <code>updateOne</code> changes at most one matching document, and <code>$set</code> preserves its other fields. The activity’s prices are illustrative. Valid JSON syntax does not establish that a document meets the application’s requirements.</p>
+</section>
+<section id="mongodb"><h2>MongoDB documents and identifiers</h2><p>A MongoDB database contains collections, and a collection contains documents. Documents use BSON, which supports additional types beyond JSON, including dates, binary values, and ObjectId. Fields can contain nested documents and arrays. Collections can allow varying fields while still applying declared validation rules. See <a href="https://www.mongodb.com/docs/manual/reference/bson-types/">BSON types</a> and <a href="https://www.mongodb.com/docs/manual/core/schema-validation/">schema validation</a>.</p>
+<p>In a standard collection, <code>_id</code> uniquely identifies a document. Clients commonly generate an ObjectId when it is omitted. ObjectId contains 12 bytes and is often displayed as 24 hexadecimal characters; an <code>_id</code> can also use another supported type. Our examples deliberately use readable strings such as <code>"book_001"</code>. See <a href="https://www.mongodb.com/docs/manual/core/document/#the-_id-field">the _id field</a>.</p>
+
+</section>
+
+<section id="modeling"><h2>The bookstore: embed or reference?</h2><p>The live examples deliberately compare different stored shapes. A query must match the shape it is reading:</p>
+<ul>
+<li><strong>Live catalog and Find books:</strong> each book embeds <code>author: {name: "Jane Austen"}</code>. Query <code>"author.name"</code> directly.</li>
+<li><strong>Modeling activity’s shared-author design:</strong> a book stores one <code>author_id: "author_001"</code>. Follow that ID to a separate author document. Updating that shared document changes the biography the application resolves for both books; it does not rewrite the books.</li>
+<li><strong>Downloadable MongoDB examples:</strong> a book stores <code>author_ids: ["author_001"]</code> to allow multiple authors. Real MongoDB’s <code>{author_ids: "author_001"}</code> filter matches an array containing that ID. The browser’s limited document simulator does not implement that array-membership behavior.</li>
+</ul>
+<p>Moving from an embedded author to a reference changes the stored shape. A referenced book does not automatically gain an <code>author.name</code> field. Embedding a small biography inside one owning author also differs from copying that author into every book: the latter creates multiple copies to maintain.</p>
+<h3>Reference design used by the downloads</h3><p>An author can have a small biography embedded inside the author document. Books may have several authors, so each book can hold an array of author IDs. Reviews can grow without a fixed bound, making a separate reviews collection with a book reference a useful design.</p>
+<pre><code>{
+  "_id": "author_001",
+  "name": "Jane Austen",
+  "bio": {"short": "English novelist", "country": "England"}
+}
+
+{
+  "_id": "book_001",
+  "title": "Pride and Prejudice",
+  "author_ids": ["author_001"]
+}</code></pre>
+<p><strong>Embedding</strong> can keep small, bounded data that is owned and read together in one document. <strong>Referencing</strong> can keep shared or independently changing facts in one place. A reference ID is not an automatically enforced foreign key: the application must decide how to maintain and resolve it. Reads can use additional queries or aggregation such as <code>$lookup</code>. See <a href="https://www.mongodb.com/docs/manual/data-modeling/concepts/embedding-vs-references/">MongoDB’s embedding and reference guidance</a>.</p>
+<p>The modeling activity explores another boundary: copying an author into several books versus sharing one referenced author. Change a biography and inspect how many copies require updates. Discuss whether reviews are bounded, whether author information is shared, and which fields an application normally reads together.</p>
+
+</section>
+
+<section id="guarantees"><h2>Transactions and replicated data</h2><p>ACID describes transaction properties: atomicity groups changes, consistency preserves declared rules, isolation defines permitted concurrent observations, and durability preserves committed results under the system’s guarantees. These properties are not exclusive to relational databases. MongoDB supports atomic single-document updates and multi-document transactions. See <a href="https://www.mongodb.com/docs/manual/core/transactions/">MongoDB transactions</a>.</p>
+
+<p>The replication activity starts with two copies. Write a new store-hours value at A, compare it with B, then deliver the update. The live exercise uses only Write at A and Deliver updates. Optional follow-up controls under <strong>Explore more</strong> add disconnected links, another replica, and explicit reads. This model illustrates lag; actual MongoDB guarantees depend on topology, failure handling, and read/write settings. See <a href="https://www.mongodb.com/docs/manual/core/replica-set-secondary-reads/">secondary reads</a>.</p>
+
+<p>A single-document update is atomic, but two consecutive document writes do not automatically share a transaction. If decreasing stock and creating an order must succeed together, they need a suitable atomic boundary and correct application checks. The replication model has one writable primary, delayed delivery, and no failover. With no newer writes, functioning communication, and delivery of the queued updates, the copies catch up; the model promises no fixed delay.</p>
+<p>Atomicity and freshness answer different questions. One asks whether a group of changes is all-or-nothing; the other asks which version a read may observe.</p>
+<details><summary><strong>Reference: ACID consistency and BASE</strong></summary><p>BASE is a loose design description: Basically Available, Soft state, Eventually consistent. It is not a certification that ensures speed or uptime. Eventual consistency guarantees convergence once updates stop and communication and delivery continue. The consistency in ACID’s name concerns valid state, while replica consistency concerns what different reads can observe. See Werner Vogels’ explanation of <a href="https://www.allthingsdistributed.com/2008/12/eventually_consistent.html">eventual consistency</a>.</p></details>
+<h3>Exit question</h3><div class="note"><p>Emma still shows Jane Austen’s old biography after an update. Is that necessarily replication lag? Give one other explanation.</p></div><details><summary>Check your reasoning</summary><p>No. Emma may contain a separate embedded author copy that was never updated. A missed stored copy and a delayed replica can produce similar symptoms for different reasons.</p></details>
+</section>
+
+<section id="optional-reference" aria-labelledby="reference-title"><h2 id="reference-title">Optional practice and source reference</h2><p>These topics and downloads preserve the broader source material. They are outside the live 75-minute route. Open a topic when you need it, or continue an activity with <strong>Explore more</strong> after class.</p>
+<ul class="resource-list"><li><a href="../../interactives/lecture-06/index.html?activity=json">Optional · JSON structure ↗</a><span>Compare a null value with a missing value using real JSON parsing</span></li><li><a href="../../interactives/lecture-06/index.html?activity=graph">Optional · Graph traversal ↗</a><span>Follow relationships between people and books</span></li></ul>
+<p><a href="#formats">Formats</a> · <a href="#models">Data models</a> · <a href="#specialized">Specialized queries</a> · <a href="#tools">MongoDB setup and code</a> · <a href="#worm">WORM</a> · <a href="#logistics">Source logistics</a></p>
+<details id="formats"><summary><strong>Hierarchical data formats</strong></summary><p>A flat table repeats a set of columns across rows. Hierarchical data can nest objects and lists. JSON, XML, YAML, and TOML describe structured data using different syntax; choosing a format does not determine when an application validates its schema.</p>
 <ul>
 <li><strong>JSON:</strong> Objects contain string keys and values; arrays contain ordered values. Values can be objects, arrays, strings, numbers, booleans, or <code>null</code>. Use double quotes and omit comments and trailing commas. See the <a href="https://www.rfc-editor.org/rfc/rfc8259">JSON specification</a>.</li>
 <li><strong>XML:</strong> Elements use tags and can carry attributes or nested elements. An application or schema gives their text values meaning and can validate structure. See the <a href="https://www.w3.org/TR/xml/">XML specification</a>.</li>
@@ -37,7 +101,9 @@
 <li><a href="../../examples/lecture-06/project.toml" download>project.toml</a><span>Project configuration with sections and arrays</span></li>
 </ul><p>Save <code>student.json</code> and <code>inspect_json.py</code> together, then run <code>python3 inspect_json.py</code>. The XML example omits the advisor field; empty XML text does not automatically mean JSON null.</p>
 
-<h2>NoSQL data models</h2><p>NoSQL is an umbrella term, often expanded as “not only SQL.” It includes several data models; it does not promise a particular scaling strategy, transaction guarantee, or absence of schemas.</p>
+</details>
+
+<details id="models"><summary><strong>NoSQL data models</strong></summary><p>NoSQL is an umbrella term, often expanded as “not only SQL.” It includes several data models; it does not promise a particular scaling strategy, transaction guarantee, or absence of schemas.</p>
 <ul>
 <li><strong>Key-value:</strong> Retrieve a value using its key, such as a shopping cart by session ID. Redis and DynamoDB are examples, with capabilities beyond this simple model.</li>
 <li><strong>Document:</strong> Store and query structured records with nested fields and arrays. MongoDB is an example.</li>
@@ -46,27 +112,13 @@
 </ul>
 <p>A wide-column database differs from an analytical columnar database. Columnar storage groups values from a column for operations such as scanning and aggregation. Row-oriented storage groups a row’s values. These are workload and storage choices, not universal promises about which database will be fastest.</p>
 
-<h2>Specialized data and queries</h2><p><strong>Time-series</strong> systems focus on time-stamped measurements, time windows, and aggregations. <strong>Ledger</strong> systems preserve a history of changes; some add cryptographic evidence that makes tampering detectable. An order’s latest status can be derived from events such as Created, Processing, and Shipped.</p><p><strong>Vector search</strong> finds embeddings near a query vector according to a chosen similarity measure. Embeddings encode learned features; nearby results are candidates, not proof that statements are true. The slide’s two-dimensional points illustrate proximity, while practical embeddings commonly have many more dimensions. See <a href="https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-overview/">MongoDB’s vector search overview</a>.</p>
+</details>
 
-<h2>MongoDB documents and identifiers</h2><p>A MongoDB database contains collections, and a collection contains documents. Documents use BSON, which supports additional types beyond JSON, including dates, binary values, and ObjectId. Fields can contain nested documents and arrays. Collections can allow varying fields while still applying declared validation rules. See <a href="https://www.mongodb.com/docs/manual/reference/bson-types/">BSON types</a> and <a href="https://www.mongodb.com/docs/manual/core/schema-validation/">schema validation</a>.</p>
-<p>In a standard collection, <code>_id</code> uniquely identifies a document. Clients commonly generate an ObjectId when it is omitted. ObjectId contains 12 bytes and is often displayed as 24 hexadecimal characters; an <code>_id</code> can also use another supported type. Our examples deliberately use readable strings such as <code>"book_001"</code>. See <a href="https://www.mongodb.com/docs/manual/core/document/#the-_id-field">the _id field</a>.</p>
+<details id="specialized"><summary><strong>Specialized data and queries</strong></summary><p><strong>Time-series</strong> systems focus on time-stamped measurements, time windows, and aggregations. <strong>Ledger</strong> systems preserve a history of changes; some add cryptographic evidence that makes tampering detectable. An order’s latest status can be derived from events such as Created, Processing, and Shipped.</p><p><strong>Vector search</strong> finds embeddings near a query vector according to a chosen similarity measure. Embeddings encode learned features; nearby results are candidates, not proof that statements are true. A two-dimensional illustration can show proximity, while practical embeddings commonly have many more dimensions. See <a href="https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-overview/">MongoDB’s vector search overview</a>.</p>
 
-<h2>The bookstore: embed or reference?</h2><p>An author can have a small biography embedded inside the author document. Books may have several authors, so each book can hold an array of author IDs. Reviews can grow without a fixed bound, making a separate reviews collection with a book reference a useful design.</p>
-<pre><code>{
-  "_id": "author_001",
-  "name": "Jane Austen",
-  "bio": {"short": "English novelist", "country": "England"}
-}
+</details>
 
-{
-  "_id": "book_001",
-  "title": "Pride and Prejudice",
-  "author_ids": ["author_001"]
-}</code></pre>
-<p><strong>Embedding</strong> can keep small, bounded data that is owned and read together in one document. <strong>Referencing</strong> can keep shared or independently changing facts in one place. A reference ID is not an automatically enforced foreign key: the application must decide how to maintain and resolve it. Reads can use additional queries or aggregation such as <code>$lookup</code>. See <a href="https://www.mongodb.com/docs/manual/data-modeling/concepts/embedding-vs-references/">MongoDB’s embedding and reference guidance</a>.</p>
-<p>The modeling activity explores another boundary: copying an author into several books versus sharing one referenced author. Change a biography and inspect how many copies require updates. Discuss whether reviews are bounded, whether author information is shared, and which fields an application normally reads together.</p>
-
-<h2>MongoDB tools and practice</h2><p><strong>Atlas</strong> is a managed MongoDB service; features such as managed backups, scaling, and monitoring depend on the deployment tier. <strong>mongosh</strong> is the shell, <strong>Compass</strong> is a graphical client, and <strong>PyMongo</strong> is the Python driver. Follow the class setup instructions for an Atlas deployment and database user. See <a href="https://www.mongodb.com/docs/atlas/getting-started/">Atlas setup</a>, <a href="https://www.mongodb.com/docs/atlas/reference/free-shared-limitations/">Free deployment limits</a>, and <a href="https://www.mongodb.com/docs/mongodb-shell/install/">mongosh installation</a>.</p>
+<details id="tools"><summary><strong>MongoDB tools and practice</strong></summary><p><strong>Atlas</strong> is a managed MongoDB service; features such as managed backups, scaling, and monitoring depend on the deployment tier. <strong>mongosh</strong> is the shell, <strong>Compass</strong> is a graphical client, and <strong>PyMongo</strong> is the Python driver. Follow the class setup instructions for an Atlas deployment and database user. See <a href="https://www.mongodb.com/docs/atlas/getting-started/">Atlas setup</a>, <a href="https://www.mongodb.com/docs/atlas/reference/free-shared-limitations/">Free deployment limits</a>, and <a href="https://www.mongodb.com/docs/mongodb-shell/install/">mongosh installation</a>.</p>
 <p>After installing mongosh, save the setup script below. It creates four sample documents across the demo database’s authors, books, and reviews collections. It stops if those collections already contain data. These are separate writes, so an interrupted setup can leave partial data to inspect.</p>
 <ul class="resource-list"><li><a href="../../examples/lecture-06/bookstore.mongosh.js" download>bookstore.mongosh.js</a><span>Create the bookstore in ds2022_lecture06</span></li><li><a href="../../examples/lecture-06/query_mongodb.py" download>query_mongodb.py</a><span>Read books by author using PyMongo</span></li></ul>
 <p>Use the connection URI supplied by your class deployment. These Bash/Zsh commands read it without saving it in shell history or displaying it as you type:</p>
@@ -100,15 +152,20 @@ uv pip install pymongo
 python query_mongodb.py --author author_001</code></pre>
 <p>The sample imports <code>MongoClient</code>, selects the database and collection, and passes a dictionary as a query. The seeded result contains Pride and Prejudice and Emma. It reads at most 20 matching books and does not modify data. See the <a href="https://www.mongodb.com/docs/languages/python/pymongo-driver/current/get-started/">PyMongo guide</a>.</p>
 
-<h2>Transactions and replicated data</h2><p>ACID describes transaction properties: atomicity groups changes, consistency preserves declared rules, isolation defines permitted concurrent observations, and durability preserves committed results under the system’s guarantees. These properties are not exclusive to relational databases. MongoDB supports atomic single-document updates and multi-document transactions. See <a href="https://www.mongodb.com/docs/manual/core/transactions/">MongoDB transactions</a>.</p>
-<p>BASE is a loose design description: Basically Available, Soft state, Eventually consistent. It is not a certification that ensures speed or uptime. Eventual consistency guarantees convergence once updates stop and communication and delivery continue. The consistency in ACID’s name concerns valid state, while replica consistency concerns what different reads can observe. See Werner Vogels’ explanation of <a href="https://www.allthingsdistributed.com/2008/12/eventually_consistent.html">eventual consistency</a>.</p>
-<p>The replication activity starts with two copies. Write a new store-hours value at A, compare it with B, then deliver the update. <strong>Explore more</strong> adds disconnected links, another replica, and explicit reads. This model illustrates lag; actual MongoDB guarantees depend on topology, failure handling, and read/write settings. See <a href="https://www.mongodb.com/docs/manual/core/replica-set-secondary-reads/">secondary reads</a>.</p>
+</details>
 
-<h2>WORM and retained history</h2><p>Write Once, Read Many storage can prevent changing or deleting protected object versions during a configured retention period or legal hold. Retention may expire, and the exact rules depend on the system. WORM alone does not provide cryptographic verification; a ledger may add a verifiable history. See <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html">S3 Object Lock</a>.</p>
+<details id="worm"><summary><strong>WORM and retained history</strong></summary><p>Write Once, Read Many storage can prevent changing or deleting protected object versions during a configured retention period or legal hold. Retention may expire, and the exact rules depend on the system. WORM alone does not provide cryptographic verification; a ledger may add a verifiable history. See <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html">S3 Object Lock</a>.</p>
 
-<h2>Exam review and class logistics</h2><p>Running <code>date &gt; file1</code> three times leaves only the third command’s output because each redirection replaces the file contents. <code>&gt;&gt;</code> would append. <code>git clone</code> creates a local repository copy; a GitHub fork creates another repository on GitHub. Pull, add, and commit work on an existing repository.</p>
+</details>
+
+<details id="logistics"><summary><strong>Exam review and class logistics from the source</strong></summary><p>Running <code>date &gt; file1</code> three times leaves only the third command’s output because each redirection replaces the file contents. <code>&gt;&gt;</code> would append. <code>git clone</code> creates a local repository copy; a GitHub fork creates another repository on GitHub. Pull, add, and commit work on an existing repository.</p>
 <p>Review Bash and Git commands, options, pipelines and ETL, environment variables and PATH, the directory tree, shebangs, database connections, relational design and normalization, core SQL commands, NoSQL models, and flat versus hierarchical data.</p>
 <p>The source deck lists an in-class Exam 1 on October 8 covering modules 1–2, weeks 1–6: multiple choice, 50 minutes, pencil and paper, no notes, online resources, or phones. It lists Atlas setup and SQL work due September 30 and NoSQL work due October 7. The source uses “Lab 05” for both SQL and NoSQL; check Canvas for the current lab numbers and requirements.</p>
-<p>The October 1 session begins with committing work and updating the course fork, followed by mongosh and PyMongo practice. The upstream <a href="https://github.com/ksiller/DS2022/tree/main/class/05-data">class/05-data folder</a> contains JSON practice; its current README’s <code>class/06-data</code> command is a typo, so use <code>cd class/05-data</code>. The <a href="https://github.com/ksiller/DS2022/blob/main/class/05-nosql/README.md">class/05-nosql instructions</a> cover the assigned mongosh and PyMongo work using sample_mflix. Our smaller bookstore example is a separate practice dataset. Use the instructor’s current repository instructions for fork updates.</p>
-<h2>Presenting</h2><p>Use Right or Space to advance each build. Press <kbd>D</kbd> to write, <kbd>U</kbd> to undo ink, <kbd>O</kbd> for the overview, and <kbd>N</kbd> for presenter notes. Each exercise break links directly to the corresponding activity. Annotation storage remains separate from the SQL and scripting lectures.</p>
+<p>The source’s October 1 session began with committing work and updating the course fork, followed by mongosh and PyMongo practice. Those setup and lab instructions are reference material rather than another meeting in this 75-minute route. The upstream <a href="https://github.com/ksiller/DS2022/tree/main/class/05-data">class/05-data folder</a> contains JSON practice; its current README’s <code>class/06-data</code> command is a typo, so use <code>cd class/05-data</code>. The <a href="https://github.com/ksiller/DS2022/blob/main/class/05-nosql/README.md">class/05-nosql instructions</a> cover the assigned mongosh and PyMongo work using sample_mflix. Our smaller bookstore example is a separate practice dataset. Use the instructor’s current repository instructions for fork updates.</p>
+</details>
+
+</section>
+<section id="presenting"><h2>Presenting</h2><p>Use Right or Space to advance each build. Press <kbd>D</kbd> to write, <kbd>U</kbd> to undo ink, <kbd>O</kbd> for the overview, and <kbd>N</kbd> for presenter notes. Each exercise break links directly to the corresponding activity. Annotation storage remains separate from the SQL and scripting lectures.</p>
+</section>
+
 </main><footer><span>DS 2022 · Lecture 06</span><a href="../../index.html">All lectures →</a></footer></body></html>

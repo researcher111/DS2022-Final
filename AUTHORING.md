@@ -11,6 +11,8 @@
 
 Each scene has `id`, `title`, `minutes`, `kind`, `steps`, `states`, `notes`, and `draw(d, step)`. `minutes` is an estimate, not a required fixed total. Source references belong in notes or `sources`. An optional `activity` identifies the direct student activity for the toolbar and teaching guide.
 
+When a lecture has a requested time limit, choose one continuous example and include activities, discussion, and transitions in that budget. Set `durationMinutes` on the deck and the matching `targetMinutes` in the validator. Reduce the live scope to fit; do not simply shorten the estimates for an unchanged lecture. Keep supporting topics in the companion. Map them explicitly in `supplementalSources` with a `title`, `sourceSlides` array, and a local `source` link to an HTML section anchor. Live scenes and supplemental sections together should account for the source deck, without implying every topic is taught in class.
+
 Follow Lecture 05 for instructor notes: supply `teaching.idea`, one `teaching.builds` instruction per animation step, `teaching.question`, `teaching.answer`, and optional `teaching.context`. Use a one-sentence main idea and short, concrete cues such as “Point to the two Alice rows.” Explain what is visible at that step. Keep technical qualifications and class logistics in context. Derive the plain `notes` text from these fields so the two versions stay consistent. The presenter shows the current step with expandable answers; the teaching guide shows every step and answer.
 
 The canvas is 1280 × 720. Use the helpers in `slides/_shared/visuals.js`. Give drawing objects unique keys and retain their keys between animation steps. Drawing functions must be deterministic. The player handles animation timing.

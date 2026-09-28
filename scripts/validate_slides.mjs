@@ -13,7 +13,7 @@ const warnings = [];
 const lectures = [
   {id:4,sourceSlideCount:57,activities:['pipeline','path','streams','control','venv','environments']},
   {id:5,sourceSlideCount:54,structuredNotes:true,activities:['keys','normalization','queries','transactions','etl']},
-  {id:6,sourceSlideCount:45,structuredNotes:true,activities:['json','modeling','documents','graph','replication']}
+  {id:6,sourceSlideCount:45,targetMinutes:75,structuredNotes:true,activities:['json','modeling','documents','graph','replication']}
 ];
 const wordLimit = 45;
 const definitionLimit = 18;
@@ -110,7 +110,7 @@ function checkDrawing(items, label, knownKeys) {
   stats.builds++;
 }
 
-function validateDeck({id,sourceSlideCount,structuredNotes=false,activities:activityIds}) {
+function validateDeck({id,sourceSlideCount,targetMinutes,structuredNotes=false,activities:activityIds}) {
   const activities = new Set(activityIds);
   const padded = String(id).padStart(2, '0');
   const context = vm.createContext({ window: {}, console });
@@ -131,6 +131,7 @@ function validateDeck({id,sourceSlideCount,structuredNotes=false,activities:acti
   if (deck.source !== undefined) checkSource(deck.source, 'Deck source');
   const ids = new Set();
   const covered = new Set();
+  let plannedMinutes = 0;
   const hasSourceSlides = deck.scenes.some(sc => own(sc, 'sourceSlides'));
   for (const [index, sc] of deck.scenes.entries()) {
     const label = `Lecture ${padded}, slide ${index + 1} ${JSON.stringify(sc.title ?? '')}`;
@@ -151,7 +152,10 @@ function validateDeck({id,sourceSlideCount,structuredNotes=false,activities:acti
       if (sc.teaching.context !== undefined && !nonempty(sc.teaching.context)) fail(label, 'teaching.context must be nonempty when supplied');
     }
     if (!Number.isFinite(sc.minutes) || sc.minutes <= 0) fail(label, 'minutes must be a positive finite number');
-    else stats.minutes += sc.minutes;
+    else {
+      stats.minutes += sc.minutes;
+      plannedMinutes += sc.minutes;
+    }
     if (sc.activity !== undefined && !activities.has(sc.activity)) fail(label, `unknown activity ${JSON.stringify(sc.activity)}; use ${[...activities].join(', ')}`);
     if (sc.sources !== undefined) {
       if (!Array.isArray(sc.sources)) fail(label, 'sources must be an array');
@@ -198,9 +202,47 @@ function validateDeck({id,sourceSlideCount,structuredNotes=false,activities:acti
       }
     }
   }
+  if (targetMinutes !== undefined && deck.durationMinutes !== targetMinutes) {
+    fail('Lecture duration', `Lecture ${padded} must declare durationMinutes: ${targetMinutes}`);
+  }
+  if (deck.durationMinutes !== undefined) {
+    if (!Number.isFinite(deck.durationMinutes) || deck.durationMinutes <= 0) fail('Lecture duration', 'durationMinutes must be a positive finite number');
+    else if (plannedMinutes !== deck.durationMinutes) fail('Lecture duration', `Lecture ${padded} plans ${plannedMinutes} minutes; expected ${deck.durationMinutes}, including activities and discussion`);
+  }
+  // A time-limited lecture may move source topics to explicit companion sections.
+  // Keep those topics traceable without pretending they are taught in the live deck.
+  if (deck.supplementalSources !== undefined) {
+    if (!Array.isArray(deck.supplementalSources)) fail('Supplemental coverage', 'supplementalSources must be an array');
+    else for (const [index, section] of deck.supplementalSources.entries()) {
+      const label = `Lecture ${padded}, supplemental section ${index + 1}`;
+      if (!section || typeof section !== 'object') { fail(label, 'section must be an object'); continue; }
+      if (!nonempty(section.title)) fail(label, 'title is required');
+      if (!nonempty(section.source) || !/^[^?#:]+\.html#[\w-]+$/.test(section.source)) {
+        fail(label, 'source must link to a specific local HTML companion section');
+      } else {
+        checkSource(section.source, label);
+        const [file, anchor] = section.source.split('#');
+        const filename = path.resolve(root, file);
+        if (filename.startsWith(root + path.sep) && fs.existsSync(filename)) {
+          const html = fs.readFileSync(filename, 'utf8');
+          if (!new RegExp(`\\bid=["']${anchor}["']`).test(html)) fail(label, `missing companion anchor #${anchor}`);
+        }
+      }
+      if (!Array.isArray(section.sourceSlides) || !section.sourceSlides.length) fail(label, 'sourceSlides must be a nonempty array');
+      else {
+        const seen = new Set();
+        for (const source of section.sourceSlides) {
+          if (!Number.isInteger(source) || source < 1 || source > sourceSlideCount) fail(label, `invalid PPTX slide ${JSON.stringify(source)}; expected 1–${sourceSlideCount}`);
+          else covered.add(source);
+          if (seen.has(source)) fail(label, `duplicate sourceSlides entry ${source}`);
+          seen.add(source);
+        }
+      }
+    }
+  }
   if (hasSourceSlides) {
     const missing = Array.from({ length: sourceSlideCount }, (_, i) => i + 1).filter(i => !covered.has(i));
-    if (missing.length) fail('Source coverage', `PPTX slides not mapped by sourceSlides: ${missing.join(', ')}`);
+    if (missing.length) fail('Source coverage', `Lecture ${padded} PPTX slides not mapped to live scenes or supplemental sections: ${missing.join(', ')}`);
   }
 }
 
