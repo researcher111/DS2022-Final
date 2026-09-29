@@ -66,7 +66,40 @@
     question:'What could go wrong if the bookstore stores the same fact in more than one place?',
     answer:'One copy might be updated while another remains old, so readers can receive different answers.',
     context:'The 75-minute budget includes transitions, discussion, and three activity breaks. The companion holds the source dates, setup, exam information, and additional database topics.'
-  },'1–2',{kind:'title',minutes:2});
+  },'1–2',{kind:'title',minutes:1});
+
+  scene('Hierarchical file formats',['JSON: nested objects','XML: nested elements','YAML: indentation','TOML: table headers'],(d,s)=>{
+    title(d,'Hierarchical file formats');
+    box(d,'book',210,200,200,75,'book',true,P.green,32);
+    box(d,'title',90,345,230,75,'title: Emma',false,P.green,29);
+    box(d,'author',365,345,200,75,'author',true,P.green,30);
+    box(d,'name',330,480,270,75,'name: Jane Austen',false,P.green,27);
+    d.arrow('book-title',285,290,205,330,P.line,3);
+    d.arrow('book-author',340,290,465,330,P.green,3);
+    d.arrow('author-name',465,435,465,465,P.green,3);
+    const examples=[
+      {name:'JSON',lines:['{','  "title": "Emma",','  "author": {','    "name": "Jane Austen"','  }','}'],cue:'Braces nest objects',use:'Data exchange'},
+      {name:'XML',lines:['<book>','  <title>Emma</title>','  <author>','    <name>Jane Austen</name>','  </author>','</book>'],cue:'Tags nest elements',use:'Structured documents'},
+      {name:'YAML',lines:['title: Emma','author:','  name: Jane Austen'],cue:'Indentation shows nesting',use:'Configuration'},
+      {name:'TOML',lines:['title = "Emma"','','[author]','name = "Jane Austen"'],cue:'Table headers define structure',use:'Project configuration'}
+    ];
+    const example=examples[s];
+    d.text('format',660,175,example.name,38,P.green,'start',650);
+    code(d,'example',example.lines,660,240,29,46,-1,540);
+    d.text('format-cue',660,565,example.cue,29,P.green,'start');
+    d.text('format-use',660,615,example.use,27,P.muted,'start');
+  },{
+    idea:'Hierarchical file formats can represent a book with author information nested inside it.',
+    builds:[
+      'Trace book to author to name in the diagram. Point to the nested braces in JSON; they hold the author object inside the book. JSON is common for exchanging application data.',
+      'Keep the same book in view and point to the matching XML tags. The author element contains a name element. XML is common for structured documents and data exchange.',
+      'Point to the spaces before name in YAML. Here indentation puts name under author. YAML is often used for configuration; these spaces carry meaning.',
+      'Point to [author] in TOML. This table header puts the following name inside author. Connect TOML to pyproject.toml from scripting, then return to JSON for our book documents.'
+    ],
+    question:'What stays the same when the format changes?',
+    answer:'The book is still Emma, and the author name is still nested inside author. The notation for that structure changes.',
+    context:'Spend about 30 seconds per format. These are equivalent book facts, not a promise that every format has identical types or parser output. XML uses a book root element; the other snippets describe the book at the root. YAML also permits flow syntax; TOML table headers, not indentation, define this grouping. Format choice does not determine validation policy. Detailed syntax remains in the companion.'
+  },'7–12',{id:'hierarchical-formats',minutes:2,sources:['https://www.rfc-editor.org/rfc/rfc8259','https://www.w3.org/TR/xml/','https://yaml.org/spec/1.2.2/','https://toml.io/en/v1.0.0']});
 
   scene('Two books, one author',['The catalog','A fact shared by both'],(d,s)=>{
     title(d,'Two books, one author');bookCard(d,'first',115,220,465,BOOKS[0],true);bookCard(d,'second',700,220,465,BOOKS[1],true);
@@ -77,7 +110,7 @@
     question:'Does changing Jane Austen’s biography mean that either book becomes a different book?',
     answer:'No. Each book keeps its identity; the shared author information changes.',
     context:'Book titles and authors are real. Prices, tags, review examples, and operational changes in this lecture are illustrative. Begin with embedded author details, then explicitly compare a reference design later.'
-  },'29–30',{id:'a-bookstore-model',minutes:3});
+  },'29–30',{id:'a-bookstore-model',minutes:2});
 
   scene('Four NoSQL families',['Different useful shapes','Today: documents'],(d,s)=>{
     title(d,'Four NoSQL families');
@@ -370,7 +403,6 @@
   // These source topics remain available without extending the live lecture.
   const supplementalSources=[
     {title:'Original review, assignments, and meeting logistics',source:'lectures/lecture-06/index.html#logistics',sourceSlides:[3,4,5,6,40,41,42,43,44,45]},
-    {title:'Other hierarchical formats',source:'lectures/lecture-06/index.html#formats',sourceSlides:[7,9,10,11]},
     {title:'Key-value, wide-column, and graph models',source:'lectures/lecture-06/index.html#models',sourceSlides:[17,19,20,21]},
     {title:'Time-series, ledger, and vector systems',source:'lectures/lecture-06/index.html#specialized',sourceSlides:[22,23,24]},
     {title:'WORM retention',source:'lectures/lecture-06/index.html#worm',sourceSlides:[39]}

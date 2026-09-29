@@ -24,16 +24,16 @@ The uploaded Scripting, SQL, and NoSQL lectures are included. Scripting and SQL 
 
 ## NoSQL: one 75-minute bookstore story
 
-Lecture 06 uses 26 scenes to connect document shape, queries, shared author information, and update guarantees.
+Lecture 06 uses 27 scenes to connect document shape, queries, shared author information, and update guarantees.
 
 | Time | Live focus |
 | --- | --- |
-| 0–24 minutes | Documents and catalog shape: objects, arrays, identifiers, collections, and validation |
+| 0–24 minutes | Brief file-format overview; documents, arrays, identifiers, collections, and validation |
 | 24–38 minutes | Find and update, including the 5-minute **Find books** activity |
 | 38–53 minutes | Embedding and references, including the 5-minute **Embed or reference** activity |
 | 53–75 minutes | Atomicity and replication, including the 4-minute **Let a copy catch up** activity and the exit question |
 
-Use the three live activities in that order with their prepared tasks and **Explore more** closed. JSON and graph activities are optional practice. The [NoSQL companion](https://researcher111.github.io/DS2022-Final/lectures/lecture-06/index.html) separates live essentials from format comparisons, other database models, specialized queries, MongoDB setup and code, WORM, and original course logistics. September 29 and October 1, 2026 are the source deck’s dates; the live route is one 75-minute lecture.
+Use the three live activities in that order with their prepared tasks and **Explore more** closed. JSON and graph activities are optional practice. The [NoSQL companion](https://researcher111.github.io/DS2022-Final/lectures/lecture-06/index.html) separates live essentials from extended format comparisons, other database models, specialized queries, MongoDB setup and code, WORM, and original course logistics. September 29 and October 1, 2026 are the source deck’s dates; the live route is one 75-minute lecture.
 
 The live catalog queries an embedded `author.name`. The modeling activity’s shared-author alternative uses one `author_id`; downloadable MongoDB examples use an `author_ids` array to allow multiple authors. These are distinct stored shapes, so their queries must change accordingly. References do not automatically create embedded fields or enforce foreign keys.
 
