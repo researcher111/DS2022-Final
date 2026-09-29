@@ -10,7 +10,7 @@ Browser-based lectures for **Systems I: Introduction to Computing**, with concis
 - [Lecture companion and code](https://researcher111.github.io/DS2022-Final/lectures/lecture-04/index.html)
 - [Printable teaching guide](https://researcher111.github.io/DS2022-Final/slides/lecture-04.html?guide=1)
 
-The uploaded Scripting, SQL, and NoSQL lectures are included. Scripting and SQL cover the class sessions in their source PowerPoints. NoSQL follows a bookstore story ending with checkout transactions, with additional source topics preserved in its companion. Add later lectures individually.
+The uploaded Scripting, SQL, and NoSQL lectures are included. Scripting and SQL cover the class sessions in their source PowerPoints. NoSQL follows a bookstore story ending with single-document atomicity, with additional source topics preserved in its companion. Add later lectures individually.
 
 - [Lecture 05: SQL](https://researcher111.github.io/DS2022-Final/slides/lecture-05.html)
 - [SQL interactive activities](https://researcher111.github.io/DS2022-Final/interactives/lecture-05/index.html)
@@ -22,18 +22,18 @@ The uploaded Scripting, SQL, and NoSQL lectures are included. Scripting and SQL 
 - [NoSQL companion and MongoDB examples](https://researcher111.github.io/DS2022-Final/lectures/lecture-06/index.html)
 - [NoSQL teaching guide](https://researcher111.github.io/DS2022-Final/slides/lecture-06.html?guide=1)
 
-## NoSQL: bookstore to checkout
+## NoSQL: bookstore documents and updates
 
-Lecture 06 uses 22 scenes and 53 animation builds to connect document shape, queries, shared author information, and checkout transactions. The planned core is 59 minutes and ends at **Checkout crosses documents**, leaving 16 minutes in a 75-minute class for questions or practice.
+Lecture 06 uses 21 scenes and 50 animation builds to connect document shape, queries, shared author information, and single-document atomicity. The planned core is 56 minutes and ends at **One document, one atomic update**, leaving 19 minutes in a 75-minute class for questions or practice.
 
 | Time | Live focus |
 | --- | --- |
 | 0–24 minutes | Brief file-format overview; documents, arrays, identifiers, collections, and validation |
 | 24–38 minutes | Find and update, including the 5-minute **Find books** activity |
 | 38–53 minutes | Embedding and references, including the 5-minute **Embed or reference** activity |
-| 53–59 minutes | Single-document atomicity and a checkout transaction across inventory and order documents |
+| 53–56 minutes | One document, one atomic update |
 
-Use the two live activities in that order with their prepared tasks and **Explore more** closed. JSON and graph activities are optional practice. The [NoSQL companion](https://researcher111.github.io/DS2022-Final/lectures/lecture-06/index.html) separates live essentials from extended format comparisons, other database models, specialized queries, MongoDB setup and code, WORM, and original course logistics. September 29 and October 1, 2026 are the source deck’s dates; the live core ends after 59 planned minutes. Replication and BASE remain only as collapsed optional source reference in the companion.
+Use the two live activities in that order with their prepared tasks and **Explore more** closed. JSON and graph activities are optional practice. The [NoSQL companion](https://researcher111.github.io/DS2022-Final/lectures/lecture-06/index.html) separates live essentials from extended format comparisons, other database models, specialized queries, MongoDB setup and code, WORM, and original course logistics. September 29 and October 1, 2026 are the source deck’s dates; the live core ends after 56 planned minutes. Multi-document transactions, replication, and BASE remain only as collapsed optional source reference in the companion.
 
 The live catalog queries an embedded `author.name`. The modeling activity’s shared-author alternative uses one `author_id`; downloadable MongoDB examples use an `author_ids` array to allow multiple authors. These are distinct stored shapes, so their queries must change accordingly. References do not automatically create embedded fields or enforce foreign keys.
 

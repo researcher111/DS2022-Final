@@ -1,4 +1,4 @@
-/* Lecture 06: NoSQL. A bookstore story ending with checkout transactions; companion retains extension material.
+/* Lecture 06: NoSQL. A bookstore story ending with atomic document updates; companion retains extension material.
  * Native SVG diagrams remain editable and leave space for handwriting.
  * Code is displayed for teaching; the slide player never executes it.
  */
@@ -62,10 +62,10 @@
     if(s){text(d,'shape',245,465,'Represent',35);text(d,'ownership',640,465,'Update',35);text(d,'copies',1040,465,'Read',35);}
   },{
     idea:'We will design and change one bookstore to connect document shape, shared facts, and database guarantees.',
-    builds:['Point to the bookstore story. Ask students to imagine maintaining a catalog where readers look up books, staff edit author details, and checkout updates inventory.','Point to Represent, Update, and Read. Explain that we will keep using the same store while asking where facts belong, what queries return, and which checkout changes must happen together.'],
+    builds:['Point to the bookstore story. Ask students to imagine maintaining a catalog where readers look up books, staff edit author details, and staff change book prices.','Point to Represent, Update, and Read. Explain that we will keep using the same store while asking where facts belong, what queries return, and which field changes must happen together.'],
     question:'What could go wrong if the bookstore stores the same fact in more than one place?',
     answer:'One copy might be updated while another remains old, so readers can receive different answers.',
-    context:'The 59-minute route includes transitions, discussion, and two activity breaks. A 75-minute class has 16 minutes available for questions and additional practice. The companion holds the source dates, setup, exam information, and additional database topics.'
+    context:'The 56-minute route includes transitions, discussion, and two activity breaks. A 75-minute class has 19 minutes available for questions and additional practice. The companion holds the source dates, setup, exam information, and additional database topics.'
   },'1–2',{kind:'title',minutes:1});
 
   scene('Hierarchical file formats',['JSON: nested objects','XML: nested elements','YAML: indentation','TOML: table headers'],(d,s)=>{
@@ -324,19 +324,6 @@
     context:'The field changes illustrate a boundary, not a full pricing or stock-management policy. MongoDB writes are atomic at the single-document level; atomicity is available in NoSQL systems as well as relational databases. '+MONGO+'core/write-operations-atomicity/'
   },'36–37',{minutes:3});
 
-  scene('Choose the atomic boundary',['Checkout changes two documents','A failure between writes','An explicit transaction'],(d,s)=>{
-    title(d,'Checkout crosses documents');
-    box(d,'inventory',110,235,460,130,'Inventory: 1 → 0',s===2,P.green,34);box(d,'order',710,235,460,130,'Order: create one',s===2,P.green,34);
-    if(s===1){d.arrow('between',590,300,690,300,P.orange,4);text(d,'failure',640,435,'Failure between writes?',35,P.orange);}
-    if(s===2){d.rect('transaction',80,190,1120,230,'none',P.green,12,4);text(d,'together',640,490,'Commit the group together',35,P.green);}
-  },{
-    idea:'A checkout that changes separate documents needs an intentional transaction boundary if those changes must commit together.',
-    builds:['Point to inventory and the order as two documents. Describe the intended checkout: use the last copy and create its order.','Point between the writes and ask what happens if the first succeeds but the second never completes. The application could otherwise leave changed inventory without the corresponding order.','Trace the transaction boundary around both changes. Explain that a supported transaction can commit or abort the group, while the application must still check stock and handle errors correctly.'],
-    question:'Does writing these two calls consecutively make them one atomic transaction?',
-    answer:'No. The application must use the supported transaction mechanism when the writes need a shared atomic boundary.',
-    context:'This is a conceptual checkout, not executable reservation logic. A real implementation also needs conditional stock checks and concurrency/error handling. MongoDB multi-document transactions require a supported deployment. Avoid replacing the model question with an ACID acronym tour. '+MONGO+'core/transactions/'
-  },'37',{minutes:3});
-
   // These source topics remain available without extending the live lecture.
   const supplementalSources=[
     {title:'Original review, assignments, and meeting logistics',source:'lectures/lecture-06/index.html#logistics',sourceSlides:[3,4,5,6,40,41,42,43,44,45]},
@@ -346,5 +333,5 @@
     {title:'WORM retention',source:'lectures/lecture-06/index.html#worm',sourceSlides:[39]}
   ];
   window.COURSE_DECKS=window.COURSE_DECKS||{};
-  window.COURSE_DECKS[6]={id:6,title:'NoSQL',date:'59-minute core lecture',durationMinutes:59,source:'lectures/lecture-06/index.html',scenes,supplementalSources};
+  window.COURSE_DECKS[6]={id:6,title:'NoSQL',date:'56-minute core lecture',durationMinutes:56,source:'lectures/lecture-06/index.html',scenes,supplementalSources};
 })();
