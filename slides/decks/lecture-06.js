@@ -1,4 +1,4 @@
-/* Lecture 06: NoSQL. A 75-minute bookstore story; companion retains extension material.
+/* Lecture 06: NoSQL. A bookstore story ending with checkout transactions; companion retains extension material.
  * Native SVG diagrams remain editable and leave space for handwriting.
  * Code is displayed for teaching; the slide player never executes it.
  */
@@ -56,16 +56,16 @@
   }
 
   scene('NoSQL',['One bookstore','Three decisions'],(d,s)=>{
-    d.text('course',80,135,'DS 2022 · 75 minutes',30,P.green,'start',650);
+    d.text('course',80,135,'DS 2022 · Lecture 06',30,P.green,'start',650);
     d.text('name',80,235,'NoSQL',88,P.ink,'start',650);
     d.text('story',80,335,'One bookstore. Shared facts. Changing data.',35,P.muted,'start');
     if(s){text(d,'shape',245,465,'Represent',35);text(d,'ownership',640,465,'Update',35);text(d,'copies',1040,465,'Read',35);}
   },{
     idea:'We will design and change one bookstore to connect document shape, shared facts, and database guarantees.',
-    builds:['Point to the bookstore story. Ask students to imagine maintaining a catalog where readers look up books, staff edit author details, and the shop changes its opening hours.','Point to Represent, Update, and Read. Explain that we will keep using the same store while asking where facts belong, which changes happen together, and what a reader can see.'],
+    builds:['Point to the bookstore story. Ask students to imagine maintaining a catalog where readers look up books, staff edit author details, and checkout updates inventory.','Point to Represent, Update, and Read. Explain that we will keep using the same store while asking where facts belong, what queries return, and which checkout changes must happen together.'],
     question:'What could go wrong if the bookstore stores the same fact in more than one place?',
     answer:'One copy might be updated while another remains old, so readers can receive different answers.',
-    context:'The 75-minute budget includes transitions, discussion, and three activity breaks. The companion holds the source dates, setup, exam information, and additional database topics.'
+    context:'The 59-minute route includes transitions, discussion, and two activity breaks. A 75-minute class has 16 minutes available for questions and additional practice. The companion holds the source dates, setup, exam information, and additional database topics.'
   },'1–2',{kind:'title',minutes:1});
 
   scene('Hierarchical file formats',['JSON: nested objects','XML: nested elements','YAML: indentation','TOML: table headers'],(d,s)=>{
@@ -166,7 +166,7 @@
     builds:['Point to book as the parsed root object. Read the expression from left to right before following it.','Point to author and explain that the first lookup returns an object, so there is still another step.','Point to Jane Austen and read the final name lookup. Connect this route to the author.name field path we will use in a database filter.'],
     question:'What would book["author"] return without the final lookup?',
     answer:'It would return the whole nested author object, including name and bio.',
-    context:'The expression is access to parsed data, not JSON text syntax. MongoDB uses dotted field paths such as author.name in filters. The JSON activity remains available as an optional extension; it is not one of today’s three breaks. '+MONGO+'core/field-paths/'
+    context:'The expression is access to parsed data, not JSON text syntax. MongoDB uses dotted field paths such as author.name in filters. The JSON activity remains available as an optional extension; it is not one of today’s two breaks. '+MONGO+'core/field-paths/'
   },'8, 13, 27',{activity:'json',minutes:3});
 
   scene('MongoDB documents',['A readable representation','A stored document'],(d,s)=>{
@@ -321,7 +321,7 @@
     builds:['Read the current price of 20, left by our earlier update, and the inStock value for book_001. Explain that the next update changes both fields.','Trace the boundary around this document and read the two fields in $set. Ask whether the operation should commit the new price of 22 but leave its other requested change unapplied.','Point to both changed values. Explain that this one-document write is atomic; that promise does not automatically cover writes to other documents.'],
     question:'What does atomicity rule out for this one update?',
     answer:'It rules out committing only part of this update’s requested field changes.',
-    context:'The field changes illustrate a boundary, not a full pricing or stock-management policy. MongoDB writes are atomic at the single-document level; atomicity is available in NoSQL systems and does not imply every replica is immediately current. '+MONGO+'core/write-operations-atomicity/'
+    context:'The field changes illustrate a boundary, not a full pricing or stock-management policy. MongoDB writes are atomic at the single-document level; atomicity is available in NoSQL systems as well as relational databases. '+MONGO+'core/write-operations-atomicity/'
   },'36–37',{minutes:3});
 
   scene('Choose the atomic boundary',['Checkout changes two documents','A failure between writes','An explicit transaction'],(d,s)=>{
@@ -337,76 +337,14 @@
     context:'This is a conceptual checkout, not executable reservation logic. A real implementation also needs conditional stock checks and concurrency/error handling. MongoDB multi-document transactions require a supported deployment. Avoid replacing the model question with an ACID acronym tour. '+MONGO+'core/transactions/'
   },'37',{minutes:3});
 
-  scene('Another copy serves reads',['The store record','A readable copy','A customer reads B'],(d,s)=>{
-    title(d,'Another copy serves reads');
-    box(d,'a',120,230,395,155,'',true,P.green);text(d,'a-name',318,270,'A · primary',32);text(d,'a-value',318,337,'Open at 9',36,P.green);
-    if(s>=1){box(d,'b',765,230,395,155,'',true,P.blue);text(d,'b-name',963,270,'B · read replica',31);text(d,'b-value',963,337,'Open at 9',36,P.blue);d.arrow('copy',540,310,735,310,P.green,3);}
-    if(s===2)text(d,'read',640,490,'Customer reads B → Open at 9',34,P.green);
-  },{
-    idea:'An application may read a replica, which holds its own copy of the store’s data.',
-    builds:['Point to A and its opening-hours record. We are still running the bookstore, but now asking where a customer’s read is served.','Point to B and the matching hours. Explain that B holds a replicated copy rather than the separate embedded biography copies from the modeling exercise.','Read the customer’s result from B. Emphasize that a read target matters even when both copies currently agree.'],
-    question:'Which copy supplies the value in the displayed customer read?',
-    answer:'Replica B supplies it.',
-    context:'This deliberately small model has one writable primary and one readable replica. It omits failover, elections, quorums, and configurable read/write concerns. A replica’s visibility is a different issue from document ownership. '+MONGO+'core/replica-set-sync/'
-  },'38',{activity:'replication',minutes:3});
-
-  scene('A lagging replica',['Both copies agree','A accepts a change','B can still read old hours','The update arrives'],(d,s)=>{
-    title(d,'A lagging replica');
-    const a=s===0?'Open at 9':'Open at 10',b=s===3?'Open at 10':'Open at 9';
-    box(d,'a',120,230,395,155,'',true,P.green);box(d,'b',765,230,395,155,'',true,s===1||s===2?P.orange:P.green);
-    text(d,'a-name',318,270,'A · primary',31);text(d,'a-value',318,337,a,36,P.green);text(d,'b-name',963,270,'B · read replica',31);text(d,'b-value',963,337,b,36,s===1||s===2?P.orange:P.green);
-    if(s===1||s===2){d.line('pending',540,310,735,310,P.orange,4,'12 10');text(d,'pending-word',640,265,'Pending',28,P.orange);}
-    if(s===3)d.arrow('delivered',540,310,735,310,P.green,4);
-    text(d,'result',640,490,['Same hours','The write is accepted at A','Read B → Open at 9','B has applied the update'][s],34,P.green);
-  },{
-    idea:'A replica can return an older value while an accepted update is still waiting to be applied there.',
-    builds:['Compare the matching opening hours in A and B. Ask students to predict what changes first when the store submits new hours.','Point to Open at 10 in A and the pending connection. B has not yet applied this update.','Read the older hours from B. That response does not prove the write failed; it tells us what this read target currently knows.','Follow the completed arrow and compare the copies again. With no newer writes and successful delivery, the example catches up.'],
-    question:'Did the update partially change a document, or is a separate copy behind?',
-    answer:'A separate replica is behind. This is not a partly committed field update inside one document.',
-    context:'MongoDB secondaries replicate and apply changes asynchronously. Read preference, read concern, write concern, and sessions affect real guarantees. No fixed convergence time is promised; ongoing writes or failed communication complicate catch-up. '+MONGO+'core/replica-set-sync/'
-  },'38',{activity:'replication',minutes:3});
-
-  exercise('replication','Let a copy catch up',4,['Write Open at 10 at A.','Compare B; then deliver updates.'],'Why did B change without another write?','38',{
-    idea:'Separating a write from delivery makes replication lag visible.',
-    builds:['Open Let a copy catch up with the green ↗ link, reset, and allow four minutes including the debrief. Keep Open at 10, choose 1 · Write at A, and compare A with B before choosing 2 · Deliver updates. Return ready to explain why B changed without a second application write.'],
-    question:'What caused B to change after delivery?',
-    answer:'B applied the earlier update from A; the customer did not need to submit a new write.',
-    context:'Use the two-copy default and its two main buttons. The model accepts writes at A immediately and delays delivery explicitly; it is not a full MongoDB replication protocol or CAP simulator. The time includes opening, prediction, interaction, and discussion.'
-  },'exercise-observe-replication-lag');
-
-  scene('Atomicity and freshness',['Which changes commit?','Which version is read?'],(d,s)=>{
-    title(d,'Two different guarantees');
-    box(d,'atomic',100,215,490,200,'',s===0,P.green);box(d,'fresh',690,215,490,200,'',s===1,P.blue);
-    text(d,'atomic-title',345,265,'Atomicity',38);text(d,'atomic-question',345,350,'Which changes commit together?',28);
-    text(d,'fresh-title',935,265,'Read freshness',38);text(d,'fresh-question',935,350,'Which version does this read see?',28);
-    text(d,'scope',640,505,'A database choice needs both questions',32,P.muted);
-  },{
-    idea:'Atomicity concerns the write boundary, while read freshness concerns which version a reader observes.',
-    builds:['Point to Atomicity and recall the two fields in one book and the two documents in checkout. Ask which changes must commit as one unit.','Point to Read freshness and recall opening hours at B. Explain that a system can support atomic transactions while some permitted replica reads remain behind.'],
-    question:'Does an atomic update guarantee that every replica immediately returns its new value?',
-    answer:'No. Atomicity and replica read guarantees answer different questions.',
-    context:'Do not classify SQL as automatically ACID and NoSQL as automatically eventual-only. Real guarantees depend on the transaction boundary, topology, acknowledgment policy, and read settings. '+MONGO+'core/transactions/ ; '+MONGO+'core/replica-set-sync/'
-  },'36–38',{id:'choose-guarantees-deliberately',minutes:3});
-
-  scene('Why does Emma show an old biography?',['An old value','Two possible causes'],(d,s)=>{
-    title(d,'Why does Emma show an old biography?');
-    box(d,'emma',400,190,480,100,'Emma → original biography',true,P.orange,32);
-    if(s){box(d,'copies',95,395,505,95,'A stored copy was never updated',true,P.green,29);box(d,'lag',680,395,505,95,'A replica has not caught up',true,P.blue,29);d.line('left',640,310,347,375,P.line,3);d.line('right',640,310,932,375,P.line,3);}
-  },{
-    idea:'An old value can come from a missed update to duplicated data or from a replica that has not applied the update yet.',
-    builds:['Read Emma’s old biography and give pairs one minute to name two different explanations from today’s bookstore. Ask what evidence would distinguish them before revealing the possibilities.','Point to each cause and invite a concise explanation. Close by asking students to identify both the owner of the fact and the copy that served the read.'],
-    question:'What would you inspect to distinguish a missed embedded-copy update from replication lag?',
-    answer:'Inspect the stored document on the authoritative write side and the read target. If Emma’s embedded biography there is still old, its copy was missed; if that document is updated but a replica is old, delivery or the read policy explains the lag.',
-    context:'The three minutes include pair thinking, two responses, and the close. The two causes can coexist, and caches or application bugs can also return old values; this exit question focuses on the two mechanisms taught here. Optional formats, graph, specialist systems, setup, and course logistics remain in the companion.'
-  },'30–34, 38',{id:'why-does-emma-show-an-old-biography',kind:'recap',minutes:3});
-
   // These source topics remain available without extending the live lecture.
   const supplementalSources=[
     {title:'Original review, assignments, and meeting logistics',source:'lectures/lecture-06/index.html#logistics',sourceSlides:[3,4,5,6,40,41,42,43,44,45]},
     {title:'Key-value, wide-column, and graph models',source:'lectures/lecture-06/index.html#models',sourceSlides:[17,19,20,21]},
     {title:'Time-series, ledger, and vector systems',source:'lectures/lecture-06/index.html#specialized',sourceSlides:[22,23,24]},
+    {title:'Replica consistency and BASE',source:'lectures/lecture-06/index.html#replication-reference',sourceSlides:[38]},
     {title:'WORM retention',source:'lectures/lecture-06/index.html#worm',sourceSlides:[39]}
   ];
   window.COURSE_DECKS=window.COURSE_DECKS||{};
-  window.COURSE_DECKS[6]={id:6,title:'NoSQL',date:'75-minute lecture',durationMinutes:75,source:'lectures/lecture-06/index.html',scenes,supplementalSources};
+  window.COURSE_DECKS[6]={id:6,title:'NoSQL',date:'59-minute core lecture',durationMinutes:59,source:'lectures/lecture-06/index.html',scenes,supplementalSources};
 })();

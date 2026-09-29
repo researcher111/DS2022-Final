@@ -13,7 +13,7 @@ const warnings = [];
 const lectures = [
   {id:4,sourceSlideCount:57,activities:['pipeline','path','streams','control','venv','environments']},
   {id:5,sourceSlideCount:54,structuredNotes:true,activities:['keys','normalization','queries','transactions','etl']},
-  {id:6,sourceSlideCount:45,targetMinutes:75,structuredNotes:true,activities:['json','modeling','documents','graph','replication']}
+  {id:6,sourceSlideCount:45,targetMinutes:59,structuredNotes:true,activities:['json','modeling','documents','graph']}
 ];
 const wordLimit = 45;
 const definitionLimit = 18;

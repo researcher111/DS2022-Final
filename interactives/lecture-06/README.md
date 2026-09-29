@@ -1,14 +1,13 @@
 # Lecture 06 NoSQL activities
 
-Serve the repository root with `npm run serve`, then open this folder’s `index.html`. Five independent links are available:
+Serve the repository root with `npm run serve`, then open this folder’s `index.html`. Four independent links are available:
 
 - `index.html?activity=json`: strict JSON parser, clickable hierarchy, typed values, and explicit root/field/array-index paths.
 - `index.html?activity=modeling`: embedded author copies versus a shared author reference; review storage and retention controls.
 - `index.html?activity=documents`: Mongo-style JSON filter and CRUD simulator; no database server or JavaScript evaluation.
 - `index.html?activity=graph`: bookstore breadth-first search with selectable endpoints, directed/undirected traversal, and a removable relationship.
-- `index.html?activity=replication`: single-writer asynchronous replication with two or three local copies, stepped delivery, and partitions.
 
-Every page starts with one short task and a small prepared example. **Explore more** reveals custom inputs, other operations, and technical details without resetting the experiment. Replication starts with two copies; the third copy and partitions are optional. The document table initially shows only book titles and authors, adding prices when exploring further.
+Every page starts with one short task and a small prepared example. **Explore more** reveals custom inputs, other operations, and technical details without resetting the experiment. The document table initially shows only book titles and authors, adding prices when exploring further.
 
 Every page offers **Reset activity** and **Copy activity link**, course/slide/guide navigation, labeled controls, visible focus, and mobile layouts. The common visual styles are imported from `../lecture-04/lab.css`; these activities do not modify the shared stylesheet. All runtime assets are local. After they load, no network connection is needed to use the activities. Documentation links are optional external navigation. Reloading or leaving the page discards its in-memory state.
 
@@ -24,8 +23,6 @@ The document simulator supports `find`, `insertOne`, `updateOne` with `$set`, an
 
 The graph uses fictional readers, books, and authors. Breadth-first search returns a minimum-hop path in an unweighted graph. Turning off directed traversal follows either endpoint without changing stored relationship direction. Fixed neighbor order makes repeated runs deterministic. The frontier and visit log expose actual search steps.
 
-Replication has exactly one primary A, local reads, immediate acknowledgment at A, and monotonic primary-assigned revisions. There is no failover, election, quorum, multi-writer conflict resolution, or physical durability model. A–B and A–C can be blocked separately. Writes enqueue messages; delivery is manual. Older revisions cannot overwrite newer ones. Convergence requires finite writes, recovered communication, and delivery of the newest updates. This is **not** MongoDB’s replication protocol or a complete CAP demonstration, and does not claim that NoSQL systems lack ACID transactions.
-
 ## Model API
 
 `models.mjs` exports pure operations:
@@ -34,7 +31,6 @@ Replication has exactly one primary A, local reads, immediate acknowledgment at 
 - `createBookstore`, `changeAuthor`, `addBookReviews`, `bookstoreView`.
 - `DOCUMENT_SEED`, `createDocuments`, `findDocuments`, `documentOperation`.
 - `GRAPH_NODES`, `GRAPH_EDGES`, `shortestPath`.
-- `createReplication`, `replicationAction`, `replicationStatus`.
 
 Returned model states are separate from their input states. Operations reject unsupported inputs and enforce finite classroom bounds. User strings are escaped before HTML rendering; no user-supplied JavaScript, Mongo shell code, or arbitrary expression is evaluated.
 
@@ -46,6 +42,6 @@ Use Node 20 or newer:
 node --test interactives/lecture-06/models.test.mjs
 ```
 
-Tests exercise JSON types/path grammar and bounds, missing versus null, prototype-safe access, shared-data anomalies, review growth/retention, CRUD results and error atomicity, numeric types and nested filters, deterministic minimum-hop paths, stale reads, partitions, recovery, rejection of secondary writes, and ignoring old revisions.
+Tests exercise JSON types/path grammar and bounds, missing versus null, prototype-safe access, shared-data anomalies, review growth/retention, CRUD results and error atomicity, numeric types and nested filters, and deterministic minimum-hop paths.
 
 Primary references are linked inside the activities. The lecture guide provides the full set of documentation and actual MongoDB/PyMongo examples.

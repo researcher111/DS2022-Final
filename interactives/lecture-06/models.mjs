@@ -165,31 +165,3 @@ export function shortestPath(start,end,{directed=false,disabled=[]}={}) {
   }
   return {found:false,nodes:[],edges:[],trace,distance:null};
 }
-
-export function createReplication(count=3) {
-  if(![2,3].includes(count))throw new RangeError('Choose two or three replicas.');
-  return {revision:0,replicas:Array.from({length:count},(_,i)=>({id:String.fromCharCode(65+i),value:'Open at 9',revision:0})),connected:{B:true,...(count===3?{C:true}:{})},pending:[],log:['All replicas begin with revision 0.']};
-}
-export function replicationAction(state,action,{replica='A',value}={}) {
-  const next=copy(state),target=next.replicas.find(item=>item.id===replica);
-  try {
-    if(!target)throw new RangeError('Choose an existing replica.');
-    if(action==='write') {
-      if(replica!=='A')throw new TypeError('This model accepts writes only at primary A. Read replicas do not elect a new primary.');
-      if(typeof value!=='string'||!value.trim()||value.length>80)throw new RangeError('Write a value of 1–80 characters.');
-      if(next.pending.length+next.replicas.length-1>100)throw new RangeError('Deliver queued messages before writing more (100-message classroom limit).');
-      target.value=value;target.revision=++next.revision;
-      next.replicas.slice(1).forEach(item=>next.pending.push({to:item.id,value,revision:next.revision}));
-      next.log.push(`A accepted revision ${next.revision}: ${value}. Replication messages queued.`);
-    } else if(action==='partition') {
-      if(replica==='A')throw new TypeError('Choose the A–B or A–C link.');next.connected[replica]=!next.connected[replica];next.log.push(`A–${replica} communication ${next.connected[replica]?'restored':'partitioned'}.`);
-    } else if(action==='step') {
-      const index=next.pending.findIndex(message=>next.connected[message.to]);
-      if(index<0){next.log.push(next.pending.length?'No message can cross the partition.':'No messages waiting.');}
-      else {const [message]=next.pending.splice(index,1),receiver=next.replicas.find(item=>item.id===message.to);if(message.revision>receiver.revision){receiver.value=message.value;receiver.revision=message.revision;next.log.push(`Delivered revision ${message.revision} from A to ${message.to}.`);}else next.log.push(`Ignored old revision ${message.revision} at ${message.to}.`);}
-    } else if(action==='read') {next.log.push(`Read ${replica}: “${target.value}” at revision ${target.revision}${target.revision<next.revision?' (stale)':''}.`);next.log=next.log.slice(-30);return {state:next,error:null,read:copy(target)};}
-    else throw new TypeError('Unknown replication action.');
-    next.log=next.log.slice(-30);return {state:next,error:null,read:null};
-  } catch(error) {return {state:copy(state),error:error.message,read:null};}
-}
-export function replicationStatus(state) {return {converged:state.replicas.every(item=>item.revision===state.revision),waiting:state.pending.length,deliverable:state.pending.filter(message=>state.connected[message.to]).length};}

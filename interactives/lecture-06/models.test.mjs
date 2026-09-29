@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {parseJSON,inspectJSON,jsonNodes,pathLabel,createBookstore,changeAuthor,addBookReviews,bookstoreView,createDocuments,documentOperation,findDocuments,shortestPath,createReplication,replicationAction,replicationStatus} from './models.mjs';
+import {parseJSON,inspectJSON,jsonNodes,pathLabel,createBookstore,changeAuthor,addBookReviews,bookstoreView,createDocuments,documentOperation,findDocuments,shortestPath} from './models.mjs';
 
 test('JSON parser preserves all six types and rejects invalid, deep, oversized, and non-finite input',()=>{
   const data=parseJSON('{"s":"21","n":21,"b":true,"z":null,"a":[],"o":{}}');
@@ -80,30 +80,4 @@ test('breadth-first search returns a shortest path, with directions and missing 
   assert.deepEqual(shortestPath('maya','maya').nodes,['maya']);assert.equal(shortestPath('maya','maya').distance,0);
   assert.throws(()=>shortestPath('absent','maya'));
   assert.deepEqual(shortestPath('maya','rowan'),result);
-});
-test('replication shows stale reads and converges only as queued messages are delivered',()=>{
-  const initial=createReplication();let state=replicationAction(initial,'write',{value:'Open at 10'}).state;
-  assert.equal(initial.revision,0);assert.equal(replicationStatus(state).converged,false);
-  assert.equal(replicationAction(state,'read',{replica:'B'}).read.value,'Open at 9');
-  state=replicationAction(state,'step').state;assert.equal(state.replicas[1].value,'Open at 10');assert.equal(state.replicas[2].revision,0);
-  state=replicationAction(state,'step').state;assert.equal(replicationStatus(state).converged,true);
-});
-test('partition queues updates; healing alone does not deliver; finite writes then delivery converge',()=>{
-  let state=replicationAction(createReplication(),'partition',{replica:'B'}).state;
-  state=replicationAction(state,'write',{value:'One'}).state;state=replicationAction(state,'write',{value:'Two'}).state;
-  state=replicationAction(state,'step').state;state=replicationAction(state,'step').state;
-  assert.equal(state.replicas[1].revision,0);assert.equal(state.replicas[2].revision,2);assert.equal(replicationStatus(state).deliverable,0);
-  const blocked=replicationAction(state,'step').state;assert.deepEqual(blocked.replicas,state.replicas);
-  state=replicationAction(state,'partition',{replica:'B'}).state;assert.equal(replicationStatus(state).converged,false);
-  while(state.pending.length)state=replicationAction(state,'step').state;
-  assert.equal(replicationStatus(state).converged,true);assert.ok(state.replicas.every(item=>item.value==='Two'));
-});
-test('replication ignores old revisions, rejects secondary writes, and validates bounds',()=>{
-  let state=createReplication(2);assert.equal(state.replicas.length,2);
-  const refused=replicationAction(state,'write',{replica:'B',value:'No'});assert.ok(refused.error);assert.deepEqual(refused.state,state);
-  state=replicationAction(state,'write',{value:'Latest'}).state;state=replicationAction(state,'step').state;
-  state.pending.push({to:'B',revision:0,value:'Old'});state=replicationAction(state,'step').state;assert.equal(state.replicas[1].value,'Latest');
-  assert.ok(replicationAction(state,'write',{value:''}).error);assert.ok(replicationAction(state,'read',{replica:'C'}).error);assert.throws(()=>createReplication(4));
-  for(let i=0;i<40;i++)state=replicationAction(state,'read').state;
-  assert.equal(state.log.length,30);
 });
